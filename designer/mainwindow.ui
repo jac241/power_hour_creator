@@ -25,7 +25,7 @@
     <item row="0" column="0">
      <widget class="Tracklist" name="tracklist">
       <property name="showGrid">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="columnCount">
        <number>4</number>
