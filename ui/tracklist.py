@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from youtube_dl import YoutubeDL
-from pprint import pprint
 from furl import furl
 from collections import namedtuple
 
@@ -28,10 +27,13 @@ class Tracklist(QTableWidget):
     def tracks(self):
         tracks = []
         for row in range(self.rowCount()):
-            url = self.item(row, self.Columns.url).text()
-            start_time = self.item(row, self.Columns.start_time).text()
-            if url and url.strip() and start_time:
-                tracks.append(self.Track(url=url, start_time=start_time))
+            url_item = self.item(row, self.Columns.url)
+            start_time_item = self.item(row, self.Columns.start_time)
+            if url_item and start_time_item:
+                url = url_item.text().strip()
+                start_time = int(start_time_item.text())
+                if url and start_time:
+                    tracks.append(self.Track(url=url, start_time=start_time))
         return tracks
 
     def _setup_signals(self):
@@ -85,11 +87,10 @@ class FindVideoDescriptionService:
 
     def execute(self):
         self.ensure_url_is_valid()
-        return self.get_video_description()
+        return self.download_video_description()
 
-    def get_video_description(self):
-        opts = {'outtmpl': '%(id)s%(ext)s'}
-        with YoutubeDL(opts) as ydl:
+    def download_video_description(self):
+        with YoutubeDL() as ydl:
             result = ydl.extract_info(self.url, download=False)
             return result
 

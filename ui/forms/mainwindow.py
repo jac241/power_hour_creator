@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'designer\mainwindow.ui'
+# Form implementation generated from reading ui file '.\designer\mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.7.1
+# Created by: PyQt5 UI code generator 5.7
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -20,10 +20,10 @@ class Ui_mainWindow(object):
         self.createPowerHourButton.setObjectName("createPowerHourButton")
         self.gridLayout.addWidget(self.createPowerHourButton, 2, 0, 1, 1)
         self.tracklist = Tracklist(self.centralWidget)
-        self.tracklist.setShowGrid(False)
+        self.tracklist.setShowGrid(True)
+        self.tracklist.setRowCount(60)
         self.tracklist.setColumnCount(4)
         self.tracklist.setObjectName("tracklist")
-        self.tracklist.setRowCount(0)
         item = QtWidgets.QTableWidgetItem()
         self.tracklist.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
