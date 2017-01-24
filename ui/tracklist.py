@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
-from youtube_dl import YoutubeDL
-from furl import furl
 from collections import namedtuple
+
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+
+from phc.media_handling import InvalidURL, MissingURL, FindMediaDescriptionService
 
 
 class Tracklist(QTableWidget):
@@ -46,7 +47,7 @@ class Tracklist(QTableWidget):
 
     def _update_row_with_video_info(self, url, row):
         try:
-            result = FindVideoDescriptionService(url).execute()
+            result = FindMediaDescriptionService(url).execute()
 
             if 'title' in result:
                 self.setItem(row, self.Columns.title,
@@ -70,38 +71,7 @@ class Tracklist(QTableWidget):
         return self.rowCount() - 1
 
 
-class InvalidURL(Exception):
-    pass
+class TracklistPresenter:
+    def __init__(self, view):
+        self._view = view
 
-
-class MissingURL(Exception):
-    pass
-
-
-class FindVideoDescriptionService:
-    VALID_HOSTS = ['youtube.com', 'www.youtube.com']
-
-    def __init__(self, url):
-        self.url = url
-        self.invalid_url_callable = None
-
-    def execute(self):
-        self.ensure_url_is_valid()
-        return self.download_video_description()
-
-    def download_video_description(self):
-        with YoutubeDL() as ydl:
-            result = ydl.extract_info(self.url, download=False)
-            return result
-
-    def ensure_url_is_valid(self):
-        if not self.url_is_present():
-            raise MissingURL()
-        if not self.url_is_valid():
-            raise InvalidURL()
-
-    def url_is_present(self):
-        return self.url and self.url.strip()
-
-    def url_is_valid(self):
-        return furl(self.url).host in self.VALID_HOSTS
