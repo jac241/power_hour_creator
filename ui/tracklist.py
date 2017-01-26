@@ -15,7 +15,7 @@ class Tracklist(QTableWidget):
 
     DEFAULT_START_TIME = 30
 
-    Track = namedtuple('Track', 'url start_time')
+    Track = namedtuple('Track', 'url start_time title')
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -30,11 +30,13 @@ class Tracklist(QTableWidget):
         for row in range(self.rowCount()):
             url_item = self.item(row, self.Columns.url)
             start_time_item = self.item(row, self.Columns.start_time)
+            title_item = self.item(row, self.Columns.title)
             if url_item and start_time_item:
                 url = url_item.text().strip()
                 start_time = int(start_time_item.text())
+                title = title_item.text() if title_item else ""
                 if url and start_time:
-                    tracks.append(self.Track(url=url, start_time=start_time))
+                    tracks.append(self.Track(url=url, start_time=start_time, title=title))
         return tracks
 
     def _setup_signals(self):

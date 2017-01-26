@@ -14,9 +14,11 @@ AudioSegment.converter = ffmpeg
 
 
 class DownloadMediaService:
-    def __init__(self, tracks, power_hour_path):
+    def __init__(self, tracks, power_hour_path, new_track_downloading_callback, download_progress_callback):
         self.tracks = tracks
         self.power_hour_path = power_hour_path
+        self.new_track_downloading_callback = new_track_downloading_callback
+        self.download_progress_callback = download_progress_callback
 
     def execute(self):
             with TemporaryDirectory() as download_dir:
@@ -28,6 +30,7 @@ class DownloadMediaService:
                     'verbose': True,
                     'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
                     'format': 'bestaudio/best',
+                    'progress_hooks': [self.download_progress_callback],
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'mp3',
@@ -36,7 +39,8 @@ class DownloadMediaService:
                 }
                 with YoutubeDL(opts) as ydl:
                     output_tracks = []
-                    for track in self.tracks:
+                    for index, track in enumerate(self.tracks):
+                        self.new_track_downloading_callback(index, track)
                         output_tracks.append(self.create_track(track, ydl, download_dir))
 
                     self.merge_tracks_into_power_hour(output_tracks)
