@@ -5,12 +5,23 @@ from tempfile import TemporaryDirectory
 
 from furl import furl
 from pydub import AudioSegment
+
 from youtube_dl import YoutubeDL
+from youtube_dl.utils import DownloadError
+
+import attr
 
 
 ffmpeg = os.path.normpath(os.path.join(os.path.dirname(sys.modules['__main__'].__file__),
                         "ext", "ffmpeg-3.2.2-win64-static", "bin", "ffmpeg.exe"))
 AudioSegment.converter = ffmpeg
+
+@attr.s
+class Track:
+    url = attr.ib()
+    title = attr.ib()
+    length = attr.ib(convert=int)
+    start_time = attr.ib(convert=int, default=30)
 
 
 class DownloadMediaService:
@@ -87,7 +98,6 @@ class FindMediaDescriptionService:
 
     def __init__(self, url):
         self.url = url
-        self.invalid_url_callable = None
 
     def execute(self):
         self.ensure_url_is_valid()
@@ -96,7 +106,8 @@ class FindMediaDescriptionService:
     def download_video_description(self):
         with YoutubeDL() as ydl:
             result = ydl.extract_info(self.url, download=False)
-            return result
+            track = Track(url=self.url, title=result['title'], length=result['duration'])
+            return track
 
     def ensure_url_is_valid(self):
         if not self.url_is_present():

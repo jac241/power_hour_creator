@@ -2,7 +2,8 @@ from collections import namedtuple
 
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 
-from phc.media_handling import InvalidURL, MissingURL, FindMediaDescriptionService
+from phc.media_handling import InvalidURL, MissingURL, DownloadError,\
+    FindMediaDescriptionService, Track
 
 
 class Tracklist(QTableWidget):
@@ -12,10 +13,6 @@ class Tracklist(QTableWidget):
         title = 1
         track_length = 2
         start_time = 3
-
-    DEFAULT_START_TIME = 30
-
-    Track = namedtuple('Track', 'url start_time title')
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -31,12 +28,14 @@ class Tracklist(QTableWidget):
             url_item = self.item(row, self.Columns.url)
             start_time_item = self.item(row, self.Columns.start_time)
             title_item = self.item(row, self.Columns.title)
+            length_item = self.item(row, self.Columns.track_length)
             if url_item and start_time_item:
                 url = url_item.text().strip()
                 start_time = int(start_time_item.text())
                 title = title_item.text() if title_item else ""
+                length = length_item.text() if length_item else 0
                 if url and start_time:
-                    tracks.append(self.Track(url=url, start_time=start_time, title=title))
+                    tracks.append(Track(url=url, start_time=start_time, title=title, length=length))
         return tracks
 
     def _setup_signals(self):
@@ -49,20 +48,17 @@ class Tracklist(QTableWidget):
 
     def _update_row_with_video_info(self, url, row):
         try:
-            result = FindMediaDescriptionService(url).execute()
+            track = FindMediaDescriptionService(url).execute()
 
-            if 'title' in result:
-                self.setItem(row, self.Columns.title,
-                             QTableWidgetItem(str(result['title'])))
-            if 'duration' in result:
-                self.setItem(row, self.Columns.track_length,
-                             QTableWidgetItem(str(result['duration'])))
-
-            self._set_start_time_to_default(row)
+            self.setItem(row, self.Columns.title, QTableWidgetItem(track.title))
+            self.setItem(row, self.Columns.track_length, QTableWidgetItem(str(track.length)))
+            self.setItem(row, self.Columns.start_time, QTableWidgetItem(str(track.start_time)))
 
         except MissingURL:
             pass
         except InvalidURL:
+            pass
+        except DownloadError:
             pass
 
     def _set_start_time_to_default(self, row):

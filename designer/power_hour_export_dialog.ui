@@ -24,7 +24,7 @@
    <item row="2" column="0">
     <widget class="QProgressBar" name="overallProgressBar">
      <property name="value">
-      <number>24</number>
+      <number>0</number>
      </property>
     </widget>
    </item>
@@ -78,7 +78,7 @@
    <item row="4" column="0">
     <widget class="QProgressBar" name="currentSongProgressBar">
      <property name="value">
-      <number>24</number>
+      <number>0</number>
      </property>
     </widget>
    </item>
