@@ -1,12 +1,17 @@
 from collections import namedtuple
 
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.Qt import Qt
 
 from phc.media_handling import InvalidURL, MissingURL, DownloadError,\
     FindMediaDescriptionService, Track
 
 
 class Tracklist(QTableWidget):
+
+    invalid_url = pyqtSignal(str)
+    error_downloading = pyqtSignal(str)
 
     class Columns:
         url = 0
@@ -57,13 +62,14 @@ class Tracklist(QTableWidget):
         except MissingURL:
             pass
         except InvalidURL:
-            pass
+            self.invalid_url.emit(url)
+            self._clear_out_invalid_url(row)
         except DownloadError:
-            pass
+            self.error_downloading.emit(url)
+            self._clear_out_invalid_url(row)
 
-    def _set_start_time_to_default(self, row):
-        self.setItem(row, self.Columns.start_time,
-                     QTableWidgetItem(str(self.DEFAULT_START_TIME)))
+    def _clear_out_invalid_url(self, row):
+        self.setItem(row, self.Columns.url, QTableWidgetItem(""))
 
     def _last_row_index(self):
         return self.rowCount() - 1

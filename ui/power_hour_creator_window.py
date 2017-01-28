@@ -24,6 +24,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._setup_grid_appearance()
         self._connect_add_track_button()
         self._connect_create_power_hour_button()
+        self._connect_track_errors()
 
     def _setup_grid_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -33,6 +34,16 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
     def _connect_create_power_hour_button(self):
         self.createPowerHourButton.clicked.connect(self._export_power_hour)
+
+    def _connect_track_errors(self):
+        self.tracklist.invalid_url.connect(self._show_invalid_url)
+        self.tracklist.error_downloading.connect(self._show_error_downloading)
+
+    def _show_invalid_url(self, url):
+        self.statusBar.showMessage('URL "{}" is invalid'.format(url))
+
+    def _show_error_downloading(self, url):
+        self.statusBar.showMessage('Error downloading "{}"'.format(url))
 
     def _export_power_hour(self):
         file_name = QFileDialog.getSaveFileName(self, "Export Power Hour",
