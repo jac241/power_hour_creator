@@ -1,0 +1,9 @@
+appdirs
+attrs
+youtube_dl
+pydub
+PyQt5
+PyInstaller
+furl
+pydub
+pypiwin32
