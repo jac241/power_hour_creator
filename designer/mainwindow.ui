@@ -172,7 +172,7 @@
   <customwidget>
    <class>Tracklist</class>
    <extends>QTableWidget</extends>
-   <header>ui.tracklist</header>
+   <header>power_hour_creator.ui.tracklist</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -7,7 +7,7 @@ from pprint import pprint
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
 
-from phc.media_handling import DownloadMediaService
+from power_hour_creator.media_handling import DownloadMediaService
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
 

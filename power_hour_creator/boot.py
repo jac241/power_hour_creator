@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-import config
+from power_hour_creator import config
 
 
 def ensure_log_folder_exists():
@@ -15,7 +15,7 @@ def setup_logging():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
-                        filename=os.path.join(config.app_dirs.user_log_dir, "phc.log"),
+                        filename=os.path.join(config.app_dirs.user_log_dir, "power_hour_creator.log"),
                         filemode='a')
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler(stream=sys.stdout)

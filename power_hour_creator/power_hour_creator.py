@@ -3,8 +3,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 
-from ui.power_hour_creator_window import PowerHourCreatorWindow
-from boot import bootstrap_app
+from .boot import bootstrap_app
+from .ui.power_hour_creator_window import PowerHourCreatorWindow
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -18,10 +18,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = handle_exception
 
-
-if __name__ == "__main__":
+def main():
     bootstrap_app()
-
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
 

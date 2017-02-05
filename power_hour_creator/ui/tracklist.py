@@ -1,10 +1,7 @@
-from collections import namedtuple
-
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.Qt import Qt
 
-from phc.media_handling import InvalidURL, MissingURL, DownloadError,\
+from power_hour_creator.media_handling import InvalidURL, MissingURL, DownloadError,\
     FindMediaDescriptionService, Track
 
 
@@ -73,9 +70,4 @@ class Tracklist(QTableWidget):
 
     def _last_row_index(self):
         return self.rowCount() - 1
-
-
-class TracklistPresenter:
-    def __init__(self, view):
-        self._view = view
 

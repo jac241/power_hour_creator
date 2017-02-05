@@ -74,4 +74,4 @@ class Ui_mainWindow(object):
         self.addTrackButton.setText(_translate("mainWindow", "Add Track"))
         self.menuFile.setTitle(_translate("mainWindow", "File"))
 
-from ui.tracklist import Tracklist
+from power_hour_creator.ui.tracklist import Tracklist

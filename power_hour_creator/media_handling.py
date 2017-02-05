@@ -8,8 +8,11 @@ from furl import furl
 from pydub import AudioSegment
 
 from youtube_dl import YoutubeDL
+from youtube_dl.YoutubeDL import DownloadError
 
 import attr
+
+from .definitions import EXT_DIR
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -20,7 +23,7 @@ def resource_path(relative_path):
 
 
 def ffmpeg_dir():
-    return resource_path("ext/ffmpeg-3.2.2-win64-static/bin")
+    return resource_path(os.path.join(EXT_DIR, 'ffmpeg-3.2.2-win64-static/bin'))
 
 
 def ffmpeg_exe():
