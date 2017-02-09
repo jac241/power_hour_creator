@@ -52,9 +52,7 @@ class Tracklist(QTableWidget):
         try:
             track = FindMediaDescriptionService(url).execute()
 
-            self.setItem(row, self.Columns.title, QTableWidgetItem(track.title))
-            self.setItem(row, self.Columns.track_length, QTableWidgetItem(str(track.length)))
-            self.setItem(row, self.Columns.start_time, QTableWidgetItem(str(track.start_time)))
+            self._show_track_details(row, track)
 
         except MissingURL:
             pass
@@ -64,6 +62,11 @@ class Tracklist(QTableWidget):
         except DownloadError:
             self.error_downloading.emit(url)
             self._clear_out_invalid_url(row)
+
+    def _show_track_details(self, row, track):
+        self.setItem(row, self.Columns.title, QTableWidgetItem(track.title))
+        self.setItem(row, self.Columns.track_length, QTableWidgetItem(str(track.length)))
+        self.setItem(row, self.Columns.start_time, QTableWidgetItem(str(track.start_time)))
 
     def _clear_out_invalid_url(self, row):
         self.setItem(row, self.Columns.url, QTableWidgetItem(""))

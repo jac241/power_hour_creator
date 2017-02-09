@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory, TemporaryFile
 import logging
 
 from furl import furl
-from pydub import AudioSegment
 
 from youtube_dl import YoutubeDL
 from youtube_dl.YoutubeDL import DownloadError
@@ -30,10 +29,6 @@ def ffmpeg_exe():
     return os.path.join(ffmpeg_dir(), 'ffmpeg')
 
 
-def setup_audio_segment():
-    AudioSegment.converter = ffmpeg_exe()
-
-
 @attr.s
 class Track:
     url = attr.ib()
@@ -43,11 +38,13 @@ class Track:
 
 
 class DownloadMediaService:
-    def __init__(self, tracks, power_hour_path, new_track_downloading_callback, download_progress_callback):
+    def __init__(self, tracks, power_hour_path, new_track_downloading_callback, download_progress_callback,
+                 error_callback):
         self.tracks = tracks
         self.power_hour_path = power_hour_path
         self.new_track_downloading_callback = new_track_downloading_callback
         self.download_progress_callback = download_progress_callback
+        self.error_callback = error_callback
         self.logger = logging.getLogger(__name__)
 
     def execute(self):
@@ -76,51 +73,49 @@ class DownloadMediaService:
                     }],
                 }
                 with YoutubeDL(opts) as ydl:
-                    output_tracks = []
-                    for index, track in enumerate(self.tracks):
-                        self.new_track_downloading_callback(index, track)
-                        output_tracks.append(self.create_track(track, ydl, download_dir))
+                    try:
+                        output_tracks = []
+                        for index, track in enumerate(self.tracks):
+                            self.new_track_downloading_callback(index, track)
+                            output_tracks.append(self.create_track(track, ydl, download_dir))
 
-                    self.merge_tracks_into_power_hour(output_tracks)
+                        self.merge_tracks_into_power_hour(output_tracks)
+                    except subprocess.CalledProcessError as e:
+                        self.error_callback('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
+                    except FileNotFoundError as e:
+                        self.error_callback(str(e))
+
 
     def create_track(self, track, ydl, download_dir):
         ydl.download([track.url])
         mp3file = os.path.join(download_dir, '{:05d}.mp3'.format(ydl._num_downloads))
-        # ffmpeg -ss 30 -t 70 -i inputfile.mp3 -acodec copy outputfile.mp3
         output_file_path = self.shorten_to_one_minute(mp3file, track)
         return output_file_path
 
     def shorten_to_one_minute(self, mp3file, track):
         output_file_path = os.path.splitext(mp3file)[0] + '_out' + os.path.splitext(mp3file)[1]
-        cmd = [ffmpeg_exe(),
-               '-y',
-               '-ss', str(track.start_time),
-               '-t', '59',
-               '-i', mp3file,
-               '-acodec', 'copy',
-               output_file_path]
-        print(' '.join(cmd))
-        # subprocess.check_call(cmd, **subprocess_args(False))
+
+        cmd = [
+            ffmpeg_exe(),
+           '-y',
+           '-ss', str(track.start_time),
+           '-t', '60',
+           '-i', mp3file,
+           '-acodec', 'copy',
+           output_file_path
+        ]
+
+        self.logger.debug('Shortening {} to 1 minute with cmd: {}'.format(track.title, ' '.join(cmd)))
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         return output_file_path
 
     def merge_tracks_into_power_hour(self, output_tracks):
-        with TemporaryFile(mode="w+") as tracklistFile:
-            tracklistFile.writelines(output_tracks)
-            cmd = '{} -y -i "concat:{}" -acodec copy {}'.format(
-                ffmpeg_exe(),
-                "|".join(output_tracks),
-                self.power_hour_path)
-            self.logger.info(cmd)
-            subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-            # setup_audio_segment()
-            # power_hour = AudioSegment.empty()
-            # for file in output_tracks:
-            #     self.logger.debug("Concatenating mp3 track %s", file)
-            #     audio_data = AudioSegment.from_mp3(file)
-            #     power_hour += audio_data
-            # print(self.power_hour_path)
-            # power_hour.export(self.power_hour_path)
+        cmd = '{} -y -i "concat:{}" -acodec copy {}'.format(
+            ffmpeg_exe(),
+            "|".join(output_tracks),
+            self.power_hour_path)
+        self.logger.info('Merging into power hour with command: {}'.format(cmd))
+        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
 
 class InvalidURL(Exception):

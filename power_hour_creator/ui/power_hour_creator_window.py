@@ -4,7 +4,7 @@ import os
 
 from pprint import pprint
 
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, QMessageBox
 from PyQt5.QtCore import QThread, QObject, pyqtSignal
 
 from power_hour_creator.media_handling import DownloadMediaService
@@ -45,10 +45,14 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
     def _show_error_downloading(self, url):
         self.statusBar.showMessage('Error downloading "{}"'.format(url))
 
+    def _show_worker_error(self, message):
+        msg = QMessageBox(self)
+        msg.setText('Error occured')
+        msg.setDetailedText(message)
+        msg.show()
+
     def _export_power_hour(self):
-        file_name = QFileDialog.getSaveFileName(self, "Export Power Hour",
-                                                os.path.expanduser('~/Music'),
-                                                "Audio (*.mp3)")[0]
+        file_name = self.get_export_path()
         if not file_name.lower().endswith('.mp3'):
             file_name += '.mp3'
 
@@ -66,13 +70,19 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             worker.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
             worker.track_download_progress.connect(progress_dialog.show_track_download_progress)
             worker.finished.connect(progress_dialog.close)
-            worker.finished.connect(self._display_finished_status)
+            worker.finished.connect(self._show_finished_status)
+            worker.error.connect(self._show_worker_error)
 
             thread.start()
 
             progress_dialog.show()
 
-    def _display_finished_status(self):
+    def get_export_path(self):
+        return QFileDialog.getSaveFileName(self, "Export Power Hour",
+                                           os.path.expanduser('~/Music'),
+                                           "Audio (*.mp3)")[0]
+
+    def _show_finished_status(self):
         self.statusBar.showMessage("Power hour created!", 5000)
 
 
@@ -110,6 +120,7 @@ class PowerHourExportWorker(QObject):
     new_track_downloading = pyqtSignal(object)
     finished = pyqtSignal()
     track_download_progress = pyqtSignal(object, object)
+    error = pyqtSignal(object)
 
     def __init__(self, power_hour):
         super().__init__()
@@ -120,7 +131,8 @@ class PowerHourExportWorker(QObject):
             self._power_hour.tracks,
             self._power_hour.file_name,
             new_track_downloading_callback=self.handle_new_track_downloading,
-            download_progress_callback=self.handle_download_progress)
+            download_progress_callback=self.handle_download_progress,
+            error_callback=self.handle_service_error)
 
         service.execute()
 
@@ -131,5 +143,13 @@ class PowerHourExportWorker(QObject):
         self.new_track_downloading.emit(track)
 
     def handle_download_progress(self, info):
-        self.track_download_progress.emit(info['downloaded_bytes'], info['total_bytes'])
+        total_bytes = 1
+        if 'total_bytes_estimate' in info:
+            total_bytes = info['total_bytes_estimate']
+        elif 'total_bytes' in info:
+            total_bytes = info['total_bytes']
+        self.track_download_progress.emit(info['downloaded_bytes'], total_bytes)
+
+    def handle_service_error(self, message):
+        self.error.emit(message)
 
