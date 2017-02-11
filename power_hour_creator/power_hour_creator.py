@@ -2,6 +2,7 @@ import logging
 import sys
 
 from PyQt5 import QtWidgets, QtCore
+import qdarkstyle
 
 from .boot import bootstrap_app
 from .ui.power_hour_creator_window import PowerHourCreatorWindow
@@ -27,6 +28,7 @@ def launch_app():
     bootstrap_app()
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     main_window = PowerHourCreatorWindow()
     main_window.show()
 
