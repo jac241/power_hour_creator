@@ -1,8 +1,11 @@
 appdirs
 attrs
-youtube_dl
+youtube_dl>=2017.2.11
 pydub
 PyQt5
 PyInstaller
 furl
 pypiwin32
+behave
+QDarkStyle
+pyhamcrest
