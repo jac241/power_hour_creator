@@ -1,8 +1,17 @@
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QItemDelegate
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtCore import pyqtSignal, Qt
 
 from power_hour_creator.media_handling import InvalidURL, MissingURL, DownloadError,\
     FindMediaDescriptionService, Track
+
+
+class ReadOnlyDelegate(QItemDelegate):
+    def editorEvent(self, QEvent, QAbstractItemModel, QStyleOptionViewItem, QModelIndex):
+        return False
+
+    def createEditor(self, QWidget, QStyleOptionViewItem, QModelIndex):
+        return None
 
 
 class Tracklist(QTableWidget):
@@ -15,9 +24,13 @@ class Tracklist(QTableWidget):
         title = 1
         track_length = 2
         start_time = 3
+        read_only = [title, track_length]
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        self._make_columns_read_only()
         self._setup_signals()
 
     def add_track(self):
@@ -39,6 +52,10 @@ class Tracklist(QTableWidget):
                 if url and start_time:
                     tracks.append(Track(url=url, start_time=start_time, title=title, length=length))
         return tracks
+
+    def _make_columns_read_only(self):
+        for column in self.Columns.read_only:
+            self.setItemDelegateForColumn(column, ReadOnlyDelegate(self))
 
     def _setup_signals(self):
         self.cellChanged.connect(self._handle_cell_change)
