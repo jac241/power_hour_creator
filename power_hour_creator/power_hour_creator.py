@@ -28,7 +28,7 @@ def launch_app():
     bootstrap_app()
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     main_window = PowerHourCreatorWindow()
     main_window.show()
 

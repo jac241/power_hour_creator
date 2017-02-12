@@ -101,7 +101,9 @@ class DownloadMediaService:
            '-ss', str(track.start_time),
            '-t', '60',
            '-i', mp3file,
-           '-acodec', 'copy',
+           '-acodec', 'libmp3lame',
+           '-ar', '44100',
+           '-b:a', '192k',
            output_file_path
         ]
 
@@ -110,10 +112,19 @@ class DownloadMediaService:
         return output_file_path
 
     def merge_tracks_into_power_hour(self, output_tracks):
-        cmd = '{} -y -i "concat:{}" -acodec copy {}'.format(
+        cmd = [
             ffmpeg_exe(),
-            "|".join(output_tracks),
-            self.power_hour_path)
+            '-y',
+            '-i', "concat:{}".format("|".join(output_tracks)),
+            '-acodec', 'libmp3lame',
+            '-b:a', '192k',
+            '-ar', '44100',
+            self.power_hour_path
+        ]
+            #       ""''''{} -y -i "concat:{}" -acodec libmp3lame -b:a 192k -ar 44100 "{}"'.format(
+            # ffmpeg_exe(),
+            # "|".join(output_tracks),
+            # self.power_hour_path)
         self.logger.info('Merging into power hour with command: {}'.format(cmd))
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 

@@ -6,26 +6,30 @@ from hamcrest import *
 import os
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
 
-use_step_matcher("re")
-
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 
+use_step_matcher("re")
 
-@when("I add a track to a power hour")
-def step_impl(context):
-    """
-    :type context: behave.runner.Context
-    """
-    tracklist = context.main_window.tracklist
-    viewport = tracklist.viewport()
-    for track_num in range(2):
-        url_cell_pos = QPoint(tracklist.columnViewportPosition(0),
-                              tracklist.rowViewportPosition(track_num + 1))
-        QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
-        QTest.mouseDClick(viewport, Qt.LeftButton, pos=url_cell_pos)
-        QTest.keyClicks(viewport.focusWidget(), track_url)
-        QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
+
+# @when("I add 2 tracks to a power hour")
+# def step_impl(context):
+#     """
+#     :type context: behave.runner.Context
+#     """
+#     tracklist = context.main_window.tracklist
+#     viewport = tracklist.viewport()
+#     for track_num in range(2):
+#         add_track_to_power_hour(track_num, tracklist, viewport)
+#
+
+def add_track_to_power_hour(track_num, tracklist, viewport):
+    url_cell_pos = QPoint(tracklist.columnViewportPosition(0),
+                          tracklist.rowViewportPosition(track_num + 1))
+    QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
+    QTest.mouseDClick(viewport, Qt.LeftButton, pos=url_cell_pos)
+    QTest.keyClicks(viewport.focusWidget(), track_url)
+    QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
 
 
 @step("I create a power hour")
