@@ -82,7 +82,7 @@ class TrackDelegate(QItemDelegate):
                and index.model().data(index, Qt.DisplayRole)
 
     def _column_is_time_column(self, index):
-        return (index.column() in self._time_columns)
+        return index.column() in self._time_columns
 
     def commitAndCloseEditor(self):
         editor = self.sender()
@@ -105,7 +105,6 @@ class Tracklist(QTableWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self._setup_delegate()
         self._setup_signals()

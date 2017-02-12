@@ -53,10 +53,9 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
     def _export_power_hour(self):
         file_name = self.get_export_path()
-        if not file_name.lower().endswith('.mp3'):
-            file_name += '.mp3'
-
         if file_name:
+            file_name = self._ensure_file_has_mp3_ext(file_name)
+
             power_hour = PowerHour(self.tracklist.tracks, file_name)
             thread = QThread(self)
             worker = PowerHourExportWorker(power_hour)
@@ -76,6 +75,11 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             thread.start()
 
             progress_dialog.show()
+
+    def _ensure_file_has_mp3_ext(self, file_name):
+        if not file_name.lower().endswith('.mp3'):
+            file_name += '.mp3'
+        return file_name
 
     def get_export_path(self):
         return QFileDialog.getSaveFileName(self, "Export Power Hour",

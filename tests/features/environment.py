@@ -1,7 +1,8 @@
 import os
 import glob
 
-from power_hour_creator import power_hour_creator, definitions
+import power_hour_creator.config
+from power_hour_creator import power_hour_creator, config
 from PyQt5.QtTest import QTest
 
 
@@ -11,7 +12,7 @@ def after_step(context, step):
 
 def before_scenario(context, scenario):
     launch_app(context)
-    context.support_path = os.path.join(definitions.ROOT_DIR, "../tests/support")
+    context.support_path = os.path.join(config.ROOT_DIR, "../tests/support")
 
 
 def after_scenario(context, scenario):

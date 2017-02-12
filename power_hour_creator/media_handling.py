@@ -11,7 +11,8 @@ from youtube_dl.YoutubeDL import DownloadError
 
 import attr
 
-from .definitions import EXT_DIR
+from power_hour_creator.config import EXT_DIR
+
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -27,14 +28,6 @@ def ffmpeg_dir():
 
 def ffmpeg_exe():
     return os.path.join(ffmpeg_dir(), 'ffmpeg')
-
-
-@attr.s
-class Track:
-    url = attr.ib()
-    title = attr.ib()
-    length = attr.ib(convert=int)
-    start_time = attr.ib(convert=int, default=30)
 
 
 class DownloadMediaService:
@@ -121,10 +114,6 @@ class DownloadMediaService:
             '-ar', '44100',
             self.power_hour_path
         ]
-            #       ""''''{} -y -i "concat:{}" -acodec libmp3lame -b:a 192k -ar 44100 "{}"'.format(
-            # ffmpeg_exe(),
-            # "|".join(output_tracks),
-            # self.power_hour_path)
         self.logger.info('Merging into power hour with command: {}'.format(cmd))
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
@@ -136,10 +125,22 @@ class InvalidURL(Exception):
 class MissingURL(Exception):
     pass
 
+@attr.s
+class Track:
+    url = attr.ib()
+    title = attr.ib()
+    length = attr.ib(convert=str)
+    start_time = attr.ib(convert=int, default=30)
+
+    @classmethod
+    def from_ydl(cls, result):
+        url = result['webpage_url']
+        title = result['title']
+        length = result['duration'] if 'duration' in result else ''
+        return cls(url=url, title=title, length=length)
+
 
 class FindMediaDescriptionService:
-    VALID_HOSTS = ['youtube.com', 'www.youtube.com', 'soundcloud.com', 'www.soundcloud.com']
-
     def __init__(self, url):
         self.url = url
 
@@ -150,17 +151,12 @@ class FindMediaDescriptionService:
     def download_video_description(self):
         with YoutubeDL() as ydl:
             result = ydl.extract_info(self.url, download=False)
-            track = Track(url=self.url, title=result['title'], length=result['duration'])
+            track = Track.from_ydl(result)
             return track
 
     def ensure_url_is_valid(self):
         if not self.url_is_present():
             raise MissingURL()
-        if not self.url_is_valid():
-            raise InvalidURL()
 
     def url_is_present(self):
         return self.url and self.url.strip()
-
-    def url_is_valid(self):
-        return furl(self.url).host in self.VALID_HOSTS
