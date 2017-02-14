@@ -13,28 +13,41 @@ class DisplayTime:
         self._time = time
 
     def as_time_str(self):
-        if ':' in str(self._time):
+        if self._already_a_time_str():
             return self._time
+
+        if self._has_alphabet_characters():
+            return ""
 
         m, s = divmod(int(self._time), 60)
         return "%02d:%02d" % (m, s)
 
     def as_seconds(self):
+        if self._is_an_int():
+            return self._time
+
         if len(self._time) == 0:
             return self._time
 
-        if type(self._time) is int:
-            return self._time
-
-        if re.search('[a-zA-Z]', self._time):
+        if self._has_alphabet_characters():
             return ""
 
-        if ':' not in self._time:
+        if self._just_seconds_in_string():
             return int(self._time)
 
         return sum(x * int(t) for x, t in zip([60, 1], self._time.split(':')))
 
+    def _already_a_time_str(self):
+        return ':' in str(self._time)
 
+    def _just_seconds_in_string(self):
+        return not self._already_a_time_str()
+
+    def _has_alphabet_characters(self):
+        return not self._is_an_int() and re.search('[a-zA-Z]', self._time)
+
+    def _is_an_int(self):
+        return type(self._time) == int
 
 
 class TrackDelegate(QItemDelegate):
@@ -71,9 +84,9 @@ class TrackDelegate(QItemDelegate):
         if index.column() in self._read_only_columns:
             return None
         if self._column_is_time_column(index):
-            lineEdit = QLineEdit(parent)
-            lineEdit.editingFinished.connect(self.commitAndCloseEditor)
-            return lineEdit
+            line_edit = QLineEdit(parent)
+            line_edit.editingFinished.connect(self._commit_and_close_editor)
+            return line_edit
         else:
             return super().createEditor(parent, option, index)
 
@@ -84,7 +97,7 @@ class TrackDelegate(QItemDelegate):
     def _column_is_time_column(self, index):
         return index.column() in self._time_columns
 
-    def commitAndCloseEditor(self):
+    def _commit_and_close_editor(self):
         editor = self.sender()
         self.commitData.emit(editor)
         self.closeEditor.emit(editor)
@@ -128,6 +141,11 @@ class Tracklist(QTableWidget):
                 if url and start_time:
                     tracks.append(Track(url=url, start_time=start_time, title=title, length=length))
         return tracks
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Tab:
+            pass
+        super().keyPressEvent(event)
 
     def _setup_delegate(self):
         self.setItemDelegate(

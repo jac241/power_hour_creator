@@ -19,22 +19,19 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = handle_exception
 
-app = None
-main_window = None
-
 
 def launch_app():
-    global app, main_window
     bootstrap_app()
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-    main_window = PowerHourCreatorWindow()
-    main_window.show()
+    app.main_window = PowerHourCreatorWindow()
+    app.main_window.show()
+    return app
 
 
 def main():
-    launch_app()
+    app = launch_app()
 
     sys.exit(app.exec_())
 

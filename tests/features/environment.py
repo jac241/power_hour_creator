@@ -16,18 +16,18 @@ def before_scenario(context, scenario):
 
 
 def after_scenario(context, scenario):
-    close_app()
+    close_app(context)
     delete_export_files(context)
 
 
 def launch_app(context):
-    power_hour_creator.launch_app()
-    context.main_window = power_hour_creator.main_window
-    context.app = power_hour_creator.app
+    app = power_hour_creator.launch_app()
+    context.main_window = app.main_window
+    context.app = app
 
 
-def close_app():
-    del power_hour_creator.app
+def close_app(context):
+    del context.app
 
 
 def delete_export_files(context):
