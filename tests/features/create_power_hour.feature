@@ -5,3 +5,9 @@ Feature: Create power hour
     When I add 2 tracks to a power hour
     And I create a power hour
     Then that power hour should have been created
+
+  Scenario: I should be able to move around the tracklist and create a power hour without errors
+    When I add 1 tracks to a power hour
+    And I click around the tracklist start times
+    And I create a power hour
+    Then that power hour should have been created

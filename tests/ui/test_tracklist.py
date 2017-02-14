@@ -34,3 +34,8 @@ class TestDisplayTime(TestCase):
     def test_as_seconds_should_return_an_empty_string_if_the_time_is_empty(self):
         time = DisplayTime('')
         self.assertEqual(time.as_seconds(), '')
+
+
+class TestTracklist(TestCase):
+    def test_tracks_should_not_break_when_an_item_is_blank(self):
+        self.fail()
