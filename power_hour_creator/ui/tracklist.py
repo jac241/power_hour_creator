@@ -17,7 +17,7 @@ class DisplayTime:
             return self._time
 
         if self._has_alphabet_characters():
-            return ""
+            return ''
 
         m, s = divmod(int(self._time), 60)
         return "%02d:%02d" % (m, s)
@@ -30,7 +30,7 @@ class DisplayTime:
             return self._time
 
         if self._has_alphabet_characters():
-            return ""
+            return ''
 
         if self._just_seconds_in_string():
             return int(self._time)
@@ -110,9 +110,9 @@ class Tracklist(QTableWidget):
 
     class Columns:
         url = 0
-        title = 1
-        track_length = 2
-        start_time = 3
+        start_time = 1
+        title = 2
+        track_length = 3
         read_only = [title, track_length]
         time = [track_length, start_time]
 

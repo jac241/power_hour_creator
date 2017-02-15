@@ -56,6 +56,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         if file_name:
             file_name = self._ensure_file_has_mp3_ext(file_name)
 
+            # TODO make sure this isn't causing the bug where it doesn't show the title
             power_hour = PowerHour(self.tracklist.tracks, file_name)
             thread = QThread(self)
             worker = PowerHourExportWorker(power_hour)

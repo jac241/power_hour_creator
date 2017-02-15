@@ -530,17 +530,17 @@
       </column>
       <column>
        <property name="text">
+        <string>Start Time</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
         <string>Title</string>
        </property>
       </column>
       <column>
        <property name="text">
         <string>Length</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Start Time</string>
        </property>
       </column>
      </widget>
