@@ -1,6 +1,9 @@
 from unittest import TestCase
 
-from power_hour_creator.ui.tracklist import DisplayTime
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QTableWidgetItem
+
+from power_hour_creator.ui.tracklist import DisplayTime, Tracklist
 
 
 class TestDisplayTime(TestCase):
@@ -37,5 +40,18 @@ class TestDisplayTime(TestCase):
 
 
 class TestTracklist(TestCase):
+    def setUp(self):
+        _ = QApplication([])
+        self.uut = Tracklist(None)
+
+        self.uut.add_track()
+
     def test_tracks_should_not_break_when_an_item_is_blank(self):
-        self.fail()
+        def mock_item(*_):
+            return QTableWidgetItem('')
+
+        self.uut.item = mock_item
+
+        tracks = self.uut.tracks
+        self.assertEqual(len(tracks), 0)
+

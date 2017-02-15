@@ -60,3 +60,31 @@ def step_impl(context):
 
     assert_that(os.path.exists(context.export_path), is_(True))
 
+
+@step("I click around the tracklist start times")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    tracklist = context.main_window.tracklist
+    viewport = tracklist.viewport()
+
+    blank_start_time_cell = tracklist_cell_pos(
+        context,
+        row=5,
+        column=tracklist.Columns.start_time
+    )
+
+    another_cell = tracklist_cell_pos(context, row=5, column=0)
+
+    QTest.mouseClick(viewport, Qt.LeftButton, pos=blank_start_time_cell)
+    QTest.mouseClick(viewport, Qt.LeftButton, pos=another_cell)
+
+
+def tracklist_cell_pos(context, row, column):
+    tracklist = context.main_window.tracklist
+
+    return QPoint(
+        tracklist.columnViewportPosition(column),
+        tracklist.rowViewportPosition(row)
+    )

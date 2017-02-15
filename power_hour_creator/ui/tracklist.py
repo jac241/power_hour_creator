@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QItemDelegate
 from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
 
@@ -133,7 +133,7 @@ class Tracklist(QTableWidget):
             start_time_item = self.item(row, self.Columns.start_time)
             title_item = self.item(row, self.Columns.title)
             length_item = self.item(row, self.Columns.track_length)
-            if self._all_items_are_present([url_item, start_time_item]):
+            if self._items_have_text([url_item, start_time_item]):
                 url = url_item.text().strip()
                 start_time = int(start_time_item.text())
                 title = title_item.text() if title_item else ""
@@ -142,7 +142,7 @@ class Tracklist(QTableWidget):
                     tracks.append(Track(url=url, start_time=start_time, title=title, length=length))
         return tracks
 
-    def _all_items_are_present(self, items):
+    def _items_have_text(self, items):
         return all(i is not None and len(i.text()) > 0 for i in items)
 
     def keyPressEvent(self, event):
