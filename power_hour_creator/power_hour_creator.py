@@ -21,10 +21,14 @@ sys.excepthook = handle_exception
 
 
 def launch_app():
+    logger = logging.getLogger(__name__)
+    logger.info("Bootstrapping app environment")
     bootstrap_app()
+    logger.info("Launching GUI")
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    logger.info("Showing main window")
     app.main_window = PowerHourCreatorWindow()
     app.main_window.show()
     return app
