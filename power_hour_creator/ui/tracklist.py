@@ -80,9 +80,9 @@ class TrackDelegate(QItemDelegate):
             super().setModelData(editor, model, index)
 
     def createEditor(self, parent, option, index):
-        if index.column() in self._read_only_columns:
+        if self._column_is_a_read_only_column(index):
             return None
-        if self._column_is_time_column(index):
+        if self._column_is_a_time_column(index):
             line_edit = QLineEdit(parent)
             line_edit.editingFinished.connect(self._commit_and_close_editor)
             return line_edit
@@ -90,11 +90,15 @@ class TrackDelegate(QItemDelegate):
             return super().createEditor(parent, option, index)
 
     def _column_is_time_column_and_has_data(self, index):
-        return self._column_is_time_column(index) \
-               and index.model().data(index, Qt.DisplayRole)
+        return self._column_is_a_time_column(index) \
+               and index.model().data(index, Qt.DisplayRole) is not None \
+               and index.model().data(index, Qt.DisplayRole) != ''
 
-    def _column_is_time_column(self, index):
+    def _column_is_a_time_column(self, index):
         return index.column() in self._time_columns
+
+    def _column_is_a_read_only_column(self, index):
+        return index.column() in self._read_only_columns
 
     def _commit_and_close_editor(self):
         editor = self.sender()
