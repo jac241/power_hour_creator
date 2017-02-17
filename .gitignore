@@ -91,4 +91,9 @@ ENV/
 .ropeproject
 
 .idea
+
+# Media formats
 *.mp3
+*.aac
+*.mp4
+*.m4a

@@ -4,8 +4,7 @@ from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
 
-from power_hour_creator.media_handling import InvalidURL, MissingURL, DownloadError,\
-    FindMediaDescriptionService, Track
+from power_hour_creator.media_handling import DownloadError, Track, find_track
 
 
 class DisplayTime:
@@ -168,15 +167,9 @@ class Tracklist(QTableWidget):
 
     def _update_row_with_video_info(self, url, row):
         try:
-            track = FindMediaDescriptionService(url).execute()
-
-            self._show_track_details(row, track)
-
-        except MissingURL:
+            self._show_track_details(row, find_track(url))
+        except ValueError:
             pass
-        except InvalidURL:
-            self.invalid_url.emit(url)
-            self._clear_out_invalid_url(row)
         except DownloadError:
             self.error_downloading.emit(url)
             self._clear_out_invalid_url(row)
