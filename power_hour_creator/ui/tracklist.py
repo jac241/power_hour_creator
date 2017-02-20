@@ -90,9 +90,9 @@ class TrackDelegate(QItemDelegate):
             return super().createEditor(parent, option, index)
 
     def _column_is_time_column_and_has_data(self, index):
-        return self._column_is_a_time_column(index) \
-               and index.model().data(index, Qt.DisplayRole) is not None \
-               and index.model().data(index, Qt.DisplayRole) != ''
+        return (self._column_is_a_time_column(index)
+                and index.model().data(index, Qt.DisplayRole) is not None
+                and index.model().data(index, Qt.DisplayRole) != '')
 
     def _column_is_a_time_column(self, index):
         return index.column() in self._time_columns
@@ -138,7 +138,7 @@ class Tracklist(QTableWidget):
             length_item = self.item(row, self.Columns.track_length)
             if self._items_have_text([url_item, start_time_item]):
                 url = url_item.text().strip()
-                start_time = int(start_time_item.text())
+                start_time = start_time_item.text()
                 title = title_item.text() if title_item else ""
                 length = length_item.text() if length_item else 0
                 if url and start_time:

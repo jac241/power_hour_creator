@@ -23,6 +23,7 @@ def after_scenario(context, scenario):
 def launch_app(context):
     app = power_hour_creator.launch_app()
     context.main_window = app.main_window
+    context.tracklist = context.main_window.tracklist
     context.app = app
 
 
@@ -31,6 +32,6 @@ def close_app(context):
 
 
 def delete_export_files(context):
-    export_files = glob.glob(os.path.join(context.support_path, "exports/*.mp3"))
+    export_files = glob.glob(os.path.join(context.support_path, "exports/*.aac"))
     for f in export_files:
         os.remove(f)

@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QTableWidgetItem
@@ -7,9 +8,6 @@ from power_hour_creator.ui.tracklist import DisplayTime, Tracklist
 
 
 class TestDisplayTime(TestCase):
-    def setUp(self):
-        super().setUp()
-
     def test_as_time_str_should_return_the_time_in_the_correct_format(self):
         time = DisplayTime(181)
         self.assertEqual(time.as_time_str(), '03:01')
@@ -54,4 +52,21 @@ class TestTracklist(TestCase):
 
         tracks = self.uut.tracks
         self.assertEqual(len(tracks), 0)
+
+    def test_tracks_should_return_a_track_with_a_zero_start_time(self):
+        def mock_item(_, column):
+            columns = self.uut.Columns
+            row = {
+                columns.url: QTableWidgetItem('youtube.com'),
+                columns.start_time: QTableWidgetItem('0')
+            }
+
+            if column in row:
+                return row[column]
+            else:
+                return None
+
+        self.uut.item = mock_item
+        self.uut.rowCount = MagicMock(return_value=1)
+        self.assertTrue(len(self.uut.tracks) == 1)
 

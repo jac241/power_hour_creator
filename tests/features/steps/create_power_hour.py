@@ -9,9 +9,6 @@ from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialo
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 
-use_step_matcher("re")
-
-
 # @when("I add 2 tracks to a power hour")
 # def step_impl(context):
 #     """
@@ -38,7 +35,7 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
 
-    context.export_path = os.path.join(context.support_path, 'exports/test.mp3')
+    context.export_path = os.path.join(context.support_path, 'exports/test.aa')
 
     context.main_window.get_export_path = Mock()
     context.main_window.get_export_path.return_value = context.export_path
@@ -88,3 +85,19 @@ def tracklist_cell_pos(context, row, column):
         tracklist.columnViewportPosition(column),
         tracklist.rowViewportPosition(row)
     )
+
+
+@step("I set track {}'s start time to {}")
+def step_impl(context, track_num, start_time):
+    """
+    :type context: behave.runner.Context
+    :type track_num: str
+    :type start_time: str
+    """
+    cell = tracklist_cell_pos(context,
+                              row=int(track_num),
+                              column=context.tracklist.Columns.start_time)
+    QTest.mouseClick(context.tracklist.viewport(), Qt.LeftButton, pos=cell)
+
+    QTest.keyClicks(context.tracklist.viewport().focusWidget(), start_time)
+    QTest.keyClick(context.tracklist.viewport().focusWidget(), Qt.Key_Return)
