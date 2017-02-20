@@ -64,25 +64,20 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         if file_name:
             file_name = self._ensure_file_has_correct_ext(file_name)
 
-            # TODO make sure this isn't causing the bug where it doesn't show the title
             power_hour = PowerHour(self.tracklist.tracks, file_name)
-            thread = QThread(self)
-            worker = PowerHourExportWorker(power_hour)
+            thread = PowerHourExportThread(self, power_hour)
             progress_dialog = ExportPowerHourDialog(self, power_hour)
 
-            worker.moveToThread(thread)
-            thread.start()
-
-            thread.finished.connect(worker.deleteLater)
-            thread.started.connect(worker.run)
-            worker.progress.connect(progress_dialog.overallProgressBar.setValue)
-            worker.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
-            worker.track_download_progress.connect(progress_dialog.show_track_download_progress)
-            worker.finished.connect(progress_dialog.close)
-            worker.finished.connect(self._show_finished_status)
-            worker.error.connect(self._show_worker_error)
+            thread.progress.connect(progress_dialog.overallProgressBar.setValue)
+            thread.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
+            thread.track_download_progress.connect(progress_dialog.show_track_download_progress)
+            thread.finished.connect(progress_dialog.close)
+            thread.finished.connect(self._show_finished_status)
+            thread.error.connect(self._show_worker_error)
 
             progress_dialog.show()
+            thread.start()
+
 
     def _ensure_file_has_correct_ext(self, file_name):
         if not file_name.lower().endswith('.aac'):
@@ -126,7 +121,7 @@ class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
         self.currentSongProgressBar.setValue(downloaded_bytes)
 
 
-class PowerHourExportWorker(QObject):
+class PowerHourExportThread(QThread):
 
     progress = pyqtSignal(int)
     new_track_downloading = pyqtSignal(object)
@@ -134,8 +129,8 @@ class PowerHourExportWorker(QObject):
     track_download_progress = pyqtSignal(object, object)
     error = pyqtSignal(object)
 
-    def __init__(self, power_hour):
-        super().__init__()
+    def __init__(self, parent, power_hour):
+        super().__init__(parent)
         self._power_hour = power_hour
 
     def run(self):
