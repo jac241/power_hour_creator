@@ -12,3 +12,7 @@ Feature: Create power hour
     And I click around the tracklist start times
     And I create a power hour
     Then that power hour should have been created
+
+  Scenario: I should not be able to create a power hour if I haven't entered a url
+    When I forget to add a track to the power hour
+    Then I should not be able to create a power hour

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\designer\mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.7.1
+# Created by: PyQt5 UI code generator 5.7
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -154,6 +154,7 @@ class Ui_mainWindow(object):
         self.gridLayout = QtWidgets.QGridLayout(self.centralWidget)
         self.gridLayout.setObjectName("gridLayout")
         self.createPowerHourButton = QtWidgets.QPushButton(self.centralWidget)
+        self.createPowerHourButton.setEnabled(False)
         self.createPowerHourButton.setObjectName("createPowerHourButton")
         self.gridLayout.addWidget(self.createPowerHourButton, 2, 0, 1, 1)
         self.tracklist = Tracklist(self.centralWidget)
@@ -205,11 +206,11 @@ class Ui_mainWindow(object):
         item = self.tracklist.horizontalHeaderItem(0)
         item.setText(_translate("mainWindow", "URL"))
         item = self.tracklist.horizontalHeaderItem(1)
-        item.setText(_translate("mainWindow", "Start Time"))
-        item = self.tracklist.horizontalHeaderItem(2)
         item.setText(_translate("mainWindow", "Title"))
-        item = self.tracklist.horizontalHeaderItem(3)
+        item = self.tracklist.horizontalHeaderItem(2)
         item.setText(_translate("mainWindow", "Length"))
+        item = self.tracklist.horizontalHeaderItem(3)
+        item.setText(_translate("mainWindow", "Start Time"))
         self.addTrackButton.setText(_translate("mainWindow", "Add Track"))
         self.menuFile.setTitle(_translate("mainWindow", "File"))
 

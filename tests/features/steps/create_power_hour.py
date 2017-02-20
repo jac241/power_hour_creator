@@ -1,3 +1,4 @@
+import time
 from behave import *
 from PyQt5.QtTest import QTest
 from PyQt5.Qt import Qt, QPoint
@@ -35,7 +36,7 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
 
-    context.export_path = os.path.join(context.support_path, 'exports/test.aa')
+    context.export_path = os.path.join(context.support_path, 'exports/test.aac')
 
     context.main_window.get_export_path = Mock()
     context.main_window.get_export_path.return_value = context.export_path
@@ -52,7 +53,10 @@ def step_impl(context):
         export_dialog = next((w for w in context.app.topLevelWidgets() if type(w) is ExportPowerHourDialog), None)
         return export_dialog.isVisible()
 
+    start = time.time()
     while export_dialog_visible():
+        if time.time() - start > 120:
+            break
         QTest.qWait(100)
 
     assert_that(os.path.exists(context.export_path), is_(True))
@@ -101,3 +105,19 @@ def step_impl(context, track_num, start_time):
 
     QTest.keyClicks(context.tracklist.viewport().focusWidget(), start_time)
     QTest.keyClick(context.tracklist.viewport().focusWidget(), Qt.Key_Return)
+
+
+@when("I forget to add a track to the power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    pass
+
+
+@then("I should not be able to create a power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that(context.main_window.createPowerHourButton.isEnabled(), is_(False))

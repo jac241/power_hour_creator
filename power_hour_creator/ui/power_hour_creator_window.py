@@ -5,7 +5,7 @@ import os
 from pprint import pprint
 
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, QMessageBox
-from PyQt5.QtCore import QThread, QObject, pyqtSignal
+from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 
 from power_hour_creator.media_handling import DownloadMediaService
 from .forms.mainwindow import Ui_mainWindow
@@ -25,6 +25,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._connect_add_track_button()
         self._connect_create_power_hour_button()
         self._connect_track_errors()
+        self._enable_create_power_hour_button_when_tracks_present()
 
     def _setup_grid_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -38,6 +39,13 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
     def _connect_track_errors(self):
         self.tracklist.invalid_url.connect(self._show_invalid_url)
         self.tracklist.error_downloading.connect(self._show_error_downloading)
+
+    def _enable_create_power_hour_button_when_tracks_present(self):
+        self.tracklist.itemChanged.connect(self._try_to_enable_create_button_on_tracklist_change)
+
+    def _try_to_enable_create_button_on_tracklist_change(self):
+        tracks_present = len(self.tracklist.tracks) > 0
+        self.createPowerHourButton.setEnabled(tracks_present)
 
     def _show_invalid_url(self, url):
         self.statusBar.showMessage('URL "{}" is invalid'.format(url))
@@ -54,7 +62,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
     def _export_power_hour(self):
         file_name = self.get_export_path()
         if file_name:
-            file_name = self._ensure_file_has_mp3_ext(file_name)
+            file_name = self._ensure_file_has_correct_ext(file_name)
 
             # TODO make sure this isn't causing the bug where it doesn't show the title
             power_hour = PowerHour(self.tracklist.tracks, file_name)
@@ -63,6 +71,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             progress_dialog = ExportPowerHourDialog(self, power_hour)
 
             worker.moveToThread(thread)
+            thread.start()
 
             thread.finished.connect(worker.deleteLater)
             thread.started.connect(worker.run)
@@ -73,11 +82,9 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             worker.finished.connect(self._show_finished_status)
             worker.error.connect(self._show_worker_error)
 
-            thread.start()
-
             progress_dialog.show()
 
-    def _ensure_file_has_mp3_ext(self, file_name):
+    def _ensure_file_has_correct_ext(self, file_name):
         if not file_name.lower().endswith('.aac'):
             file_name += '.aac'
         return file_name
