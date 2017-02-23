@@ -7,6 +7,7 @@ from pprint import pprint
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, QMessageBox
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 
+from power_hour_creator import config
 from power_hour_creator.media_handling import DownloadMediaService
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
@@ -26,6 +27,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._connect_create_power_hour_button()
         self._connect_track_errors()
         self._enable_create_power_hour_button_when_tracks_present()
+        self._connect_help_menu()
 
     def _setup_grid_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -91,6 +93,11 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
     def _show_finished_status(self):
         self.statusBar.showMessage("Power hour created!", 5000)
+
+    def _connect_help_menu(self):
+        def show_logs():
+            os.startfile(config.APP_DIRS.user_log_dir, 'explore')
+        self.actionShow_logs.triggered.connect(show_logs)
 
 
 class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):

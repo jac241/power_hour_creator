@@ -113,9 +113,9 @@ class Tracklist(QTableWidget):
 
     class Columns:
         url = 0
-        start_time = 1
-        title = 2
-        track_length = 3
+        title = 1
+        track_length = 2
+        start_time = 3
         read_only = [title, track_length]
         time = [track_length, start_time]
 
