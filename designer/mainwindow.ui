@@ -455,7 +455,7 @@
        <number>60</number>
       </property>
       <property name="columnCount">
-       <number>4</number>
+       <number>5</number>
       </property>
       <attribute name="horizontalHeaderVisible">
        <bool>true</bool>
@@ -546,6 +546,11 @@
         <string>Start Time</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>Full Song?</string>
+       </property>
+      </column>
      </widget>
     </item>
     <item row="1" column="0">
@@ -588,9 +593,21 @@
      <string>File</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionShow_logs"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionShow_logs">
+   <property name="text">
+    <string>Show logs</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

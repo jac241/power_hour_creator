@@ -13,6 +13,8 @@ def after_step(context, step):
 def before_scenario(context, scenario):
     launch_app(context)
     context.support_path = os.path.join(config.ROOT_DIR, "../tests/support")
+    context.num_tracks = 0
+    context.prhr_length = 0
 
 
 def after_scenario(context, scenario):

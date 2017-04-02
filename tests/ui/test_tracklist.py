@@ -58,7 +58,8 @@ class TestTracklist(TestCase):
             columns = self.uut.Columns
             row = {
                 columns.url: QTableWidgetItem('youtube.com'),
-                columns.start_time: QTableWidgetItem('0')
+                columns.start_time: QTableWidgetItem('0'),
+                columns.full_song: QTableWidgetItem(False)
             }
 
             if column in row:

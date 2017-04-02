@@ -1,6 +1,6 @@
 appdirs
 attrs
-youtube_dl>=2017.2.11
+youtube_dl>=2017.4.2
 pydub
 PyQt5
 PyInstaller

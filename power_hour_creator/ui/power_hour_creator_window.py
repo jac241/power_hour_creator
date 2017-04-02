@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, QMes
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 
 from power_hour_creator import config
-from power_hour_creator.media_handling import DownloadMediaService
+from power_hour_creator.media_handling import CreatePowerHourService
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
 
@@ -141,7 +141,7 @@ class PowerHourExportThread(QThread):
         self._power_hour = power_hour
 
     def run(self):
-        service = DownloadMediaService(
+        service = CreatePowerHourService(
             self._power_hour.tracks,
             self._power_hour.file_name,
             new_track_downloading_callback=self.handle_new_track_downloading,

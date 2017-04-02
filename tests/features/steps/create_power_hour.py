@@ -5,29 +5,16 @@ from PyQt5.Qt import Qt, QPoint
 from unittest.mock import Mock
 from hamcrest import *
 import os
+import re
+
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
+from power_hour_creator.ui.tracklist import DisplayTime
+from power_hour_creator.media_handling import TRACK_LENGTH
+
+from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_cell_pos
 
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
-
-# @when("I add 2 tracks to a power hour")
-# def step_impl(context):
-#     """
-#     :type context: behave.runner.Context
-#     """
-#     tracklist = context.main_window.tracklist
-#     viewport = tracklist.viewport()
-#     for track_num in range(2):
-#         add_track_to_power_hour(track_num, tracklist, viewport)
-#
-
-def add_track_to_power_hour(track_num, tracklist, viewport):
-    url_cell_pos = QPoint(tracklist.columnViewportPosition(0),
-                          tracklist.rowViewportPosition(track_num + 1))
-    QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
-    QTest.mouseDClick(viewport, Qt.LeftButton, pos=url_cell_pos)
-    QTest.keyClicks(viewport.focusWidget(), track_url)
-    QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
 
 
 @step("I create a power hour")
@@ -42,6 +29,10 @@ def step_impl(context):
     context.main_window.get_export_path.return_value = context.export_path
 
     QTest.mouseClick(context.main_window.createPowerHourButton, Qt.LeftButton)
+
+
+def assert_power_hour_is_correct_length(context):
+    assert_that(duration(context.export_path), greater_than_or_equal_to(context.prhr_length))
 
 
 @then("that power hour should have been created")
@@ -60,6 +51,7 @@ def step_impl(context):
         QTest.qWait(100)
 
     assert_that(os.path.exists(context.export_path), is_(True))
+    assert_power_hour_is_correct_length(context)
 
 
 @step("I click around the tracklist start times")
@@ -80,15 +72,6 @@ def step_impl(context):
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=blank_start_time_cell)
     QTest.mouseClick(viewport, Qt.LeftButton, pos=another_cell)
-
-
-def tracklist_cell_pos(context, row, column):
-    tracklist = context.main_window.tracklist
-
-    return QPoint(
-        tracklist.columnViewportPosition(column),
-        tracklist.rowViewportPosition(row)
-    )
 
 
 @step("I set track {}'s start time to {}")
@@ -121,3 +104,29 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     assert_that(context.main_window.createPowerHourButton.isEnabled(), is_(False))
+
+
+def duration(file):
+    import subprocess
+    from power_hour_creator.media_handling import ffmpeg_exe
+
+    cmd = [
+        ffmpeg_exe(),
+        '-i', file,
+        '-f', 'null', '-'
+    ]
+
+    output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    return DisplayTime(get_duration(output)).as_seconds()
+
+
+def get_duration(output):
+    return re.search("Duration: ..:(.*)\...,", output.decode()).group(1)
+
+
+@step("I add a full song to the power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    add_song_to_tracklist(context, full_song=True)

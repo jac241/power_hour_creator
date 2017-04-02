@@ -1,8 +1,19 @@
+from PyQt5.QtCore import QSortFilterProxyModel
+from PyQt5.QtGui import QBrush
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QCheckBox
+from PyQt5.QtWidgets import QComboBox
+from PyQt5.QtWidgets import QHBoxLayout
 from PyQt5.QtWidgets import QItemDelegate
 from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtWidgets import QStyle
+from PyQt5.QtWidgets import QStyleOptionButton
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
+
+from PyQt5.QtWidgets import QWidget
 
 from power_hour_creator.media_handling import DownloadError, Track, find_track
 
@@ -50,16 +61,21 @@ class DisplayTime:
 
 
 class TrackDelegate(QItemDelegate):
-    def __init__(self, read_only_columns, time_columns, parent=None):
+    def __init__(self, read_only_columns, time_columns, checkbox_columns, parent=None):
         super().__init__(parent)
         self._read_only_columns = read_only_columns
         self._time_columns = time_columns
+        self._checkbox_columns = checkbox_columns
 
     def paint(self, painter, option, index):
         if self._column_is_time_column_and_has_data(index):
             seconds = index.model().data(index, Qt.DisplayRole)
             time = DisplayTime(seconds)
             self.drawDisplay(painter, option, option.rect, time.as_time_str())
+            self.drawFocus(painter, option, option.rect)
+        elif index.column() in self._checkbox_columns:
+            value = 'Yes' if index.model().data(index, Qt.DisplayRole) else 'No'
+            self.drawDisplay(painter, option, option.rect, value)
             self.drawFocus(painter, option, option.rect)
         else:
             super().paint(painter, option, index)
@@ -70,12 +86,19 @@ class TrackDelegate(QItemDelegate):
             time = DisplayTime(seconds)
             if type(editor) is QLineEdit:
                 editor.setText(time.as_time_str())
+        if index.column() in self._checkbox_columns:
+            value = True if index.model().data(index, Qt.DisplayRole) else False
+            index = editor.findData(value)
+            editor.setCurrentIndex(index)
         else:
             super().setEditorData(editor, index)
 
     def setModelData(self, editor, model, index):
         if self._column_is_time_column_and_has_data(index):
             model.setData(index, DisplayTime(editor.text()).as_seconds())
+        if index.column() in self._checkbox_columns:
+            value = True if editor.itemData(editor.currentIndex()) else False
+            model.setData(index, value)
         else:
             super().setModelData(editor, model, index)
 
@@ -86,6 +109,11 @@ class TrackDelegate(QItemDelegate):
             line_edit = QLineEdit(parent)
             line_edit.editingFinished.connect(self._commit_and_close_editor)
             return line_edit
+        if index.column() in self._checkbox_columns:
+            combobox = QComboBox(parent)
+            combobox.addItem('No', False)
+            combobox.addItem('Yes', True)
+            return combobox
         else:
             return super().createEditor(parent, option, index)
 
@@ -116,12 +144,13 @@ class Tracklist(QTableWidget):
         title = 1
         track_length = 2
         start_time = 3
+        full_song = 4
         read_only = [title, track_length]
         time = [track_length, start_time]
+        checkbox = [full_song]
 
     def __init__(self, parent):
         super().__init__(parent)
-
         self._setup_delegate()
         self._setup_signals()
 
@@ -136,13 +165,23 @@ class Tracklist(QTableWidget):
             start_time_item = self.item(row, self.Columns.start_time)
             title_item = self.item(row, self.Columns.title)
             length_item = self.item(row, self.Columns.track_length)
+            full_song_item = self.item(row, self.Columns.full_song)
             if self._items_have_text([url_item, start_time_item]):
                 url = url_item.text().strip()
                 start_time = start_time_item.text()
+                full_song = full_song_item.text() if full_song_item else False
                 title = title_item.text() if title_item else ""
                 length = length_item.text() if length_item else 0
                 if url and start_time:
-                    tracks.append(Track(url=url, start_time=start_time, title=title, length=length))
+                    track = Track(
+                        url=url,
+                        start_time=start_time,
+                        title=title,
+                        length=length,
+                    )
+                    track.full_song = track.full_song or full_song
+                    tracks.append(track)
+
         return tracks
 
     def _items_have_text(self, items):
@@ -157,7 +196,8 @@ class Tracklist(QTableWidget):
         self.setItemDelegate(
             TrackDelegate(
                 read_only_columns=self.Columns.read_only,
-                time_columns=self.Columns.time
+                time_columns=self.Columns.time,
+                checkbox_columns = self.Columns.checkbox
             )
         )
 
