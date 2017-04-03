@@ -23,7 +23,7 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
 
-    context.export_path = os.path.join(context.support_path, 'exports/test.aac')
+    context.export_path = os.path.join(context.support_path, 'exports/test.m4a')
 
     context.main_window.get_export_path = Mock()
     context.main_window.get_export_path.return_value = context.export_path

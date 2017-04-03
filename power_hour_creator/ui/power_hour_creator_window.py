@@ -82,14 +82,14 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
 
     def _ensure_file_has_correct_ext(self, file_name):
-        if not file_name.lower().endswith('.aac'):
-            file_name += '.aac'
+        if not file_name.lower().endswith('.m4a'):
+            file_name += '.m4a'
         return file_name
 
     def get_export_path(self):
         return QFileDialog.getSaveFileName(self, "Export Power Hour",
                                            os.path.expanduser('~/Music'),
-                                           "Audio (*.aac)")[0]
+                                           "Audio (*.m4a)")[0]
 
     def _show_finished_status(self):
         self.statusBar.showMessage("Power hour created!", 5000)

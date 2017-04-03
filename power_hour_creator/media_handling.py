@@ -1,11 +1,8 @@
 import os
 import subprocess
 import sys
-from tempfile import TemporaryDirectory, TemporaryFile
+from tempfile import TemporaryDirectory
 import logging
-from shutil import copyfile
-
-from furl import furl
 
 from youtube_dl import YoutubeDL
 from youtube_dl.YoutubeDL import DownloadError
@@ -80,7 +77,7 @@ class CreatePowerHourService:
                     'progress_hooks': [self.download_progress_callback],
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'aac',
+                        'preferredcodec': 'm4a',
                         'preferredquality': '192'
                     }],
                 }
@@ -91,7 +88,7 @@ class CreatePowerHourService:
                             self.new_track_downloading_callback(index, track)
                             output_tracks.append(self.create_track(track, ydl, download_dir))
 
-                        self.merge_tracks_into_power_hour(output_tracks)
+                        self.merge_tracks_into_power_hour(output_tracks, download_dir)
                     except subprocess.CalledProcessError as e:
                         self.error_callback('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
                     except FileNotFoundError as e:
@@ -102,22 +99,17 @@ class CreatePowerHourService:
 
         media_file = MediaFile(
             track=track,
-            download_path=os.path.join(download_dir, '{:05d}.aac'.format(ydl._num_downloads))
+            download_path=os.path.join(download_dir, '{:05d}.m4a'.format(ydl._num_downloads))
         )
-
-        mp3file = os.path.join(download_dir, '{:05d}.aac'.format(ydl._num_downloads))
-
-        output_file_path = os.path.splitext(mp3file)[0] + '_out' + os.path.splitext(mp3file)[1]
 
         if media_file.should_shorten_track:
             self.shorten_to_one_minute(media_file)
         else:
-            self.move_to_output_path(media_file)
+            self.ensure_output_is_m4a(media_file)
 
-        return output_file_path
+        return media_file.output_path
 
     def shorten_to_one_minute(self, media_file):
-
         cmd = [
             ffmpeg_exe(),
            '-y',
@@ -133,21 +125,40 @@ class CreatePowerHourService:
         self.logger.debug('Shortening {} to 1 minute with cmd: {}'.format(media_file.track_title, ' '.join(cmd)))
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
-    def merge_tracks_into_power_hour(self, output_tracks):
+    def merge_tracks_into_power_hour(self, output_tracks, download_dir):
+        concat_directive_path = os.path.join(download_dir, "concat_input.txt")
+        self._write_output_track_list_to_file(output_tracks, concat_directive_path)
+
         cmd = [
             ffmpeg_exe(),
             '-y',
-            '-i', "concat:{}".format("|".join(output_tracks)),
-            '-acodec', 'aac',
-            '-b:a', '192k',
-            '-ar', '44100',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', concat_directive_path,
+            '-c', 'copy',
             self.power_hour_path
         ]
-        self.logger.info('Merging into power hour with command: {}'.format(cmd))
+        self.logger.info('Merging into power hour with command: {}'.format(" ".join(cmd)))
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
-    def move_to_output_path(self, media_file):
-        copyfile(media_file.download_path, media_file.output_path)
+    def ensure_output_is_m4a(self, media_file):
+        cmd = [
+            ffmpeg_exe(),
+            '-y',
+            '-i', media_file.download_path,
+            '-acodec', 'aac',
+            '-ar', '44100',
+            '-b:a', '192k',
+            media_file.output_path
+        ]
+
+        self.logger.debug('Converting {} to m4a with command {}'.format(media_file.track_title, ' '.join(cmd)))
+        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    def _write_output_track_list_to_file(self, output_tracks, concat_directive_path):
+        with open(concat_directive_path, 'w') as f:
+            for track_path in output_tracks:
+                f.write("file '{}'{}".format(track_path, os.linesep))
 
 
 @attr.s

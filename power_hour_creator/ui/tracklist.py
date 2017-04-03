@@ -179,7 +179,7 @@ class Tracklist(QTableWidget):
                         title=title,
                         length=length,
                     )
-                    track.full_song = track.full_song or full_song
+                    track.full_song = True if full_song == 'true' else False
                     tracks.append(track)
 
         return tracks
