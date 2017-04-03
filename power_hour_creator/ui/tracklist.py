@@ -61,11 +61,11 @@ class DisplayTime:
 
 
 class TrackDelegate(QItemDelegate):
-    def __init__(self, read_only_columns, time_columns, checkbox_columns, parent=None):
+    def __init__(self, read_only_columns, time_columns, boolean_columns, parent=None):
         super().__init__(parent)
         self._read_only_columns = read_only_columns
         self._time_columns = time_columns
-        self._checkbox_columns = checkbox_columns
+        self._boolean_columns = boolean_columns
 
     def paint(self, painter, option, index):
         if self._column_is_time_column_and_has_data(index):
@@ -73,12 +73,27 @@ class TrackDelegate(QItemDelegate):
             time = DisplayTime(seconds)
             self.drawDisplay(painter, option, option.rect, time.as_time_str())
             self.drawFocus(painter, option, option.rect)
-        elif index.column() in self._checkbox_columns:
+        elif self._column_is_a_boolean_column(index) and self._row_has_a_track(index):
             value = 'Yes' if index.model().data(index, Qt.DisplayRole) else 'No'
             self.drawDisplay(painter, option, option.rect, value)
             self.drawFocus(painter, option, option.rect)
         else:
             super().paint(painter, option, index)
+
+    def _column_is_time_column_and_has_data(self, index):
+        return (self._column_is_a_time_column(index)
+                and index.model().data(index, Qt.DisplayRole) is not None
+                and index.model().data(index, Qt.DisplayRole) != '')
+
+    def _column_is_a_time_column(self, index):
+        return index.column() in self._time_columns
+
+    def _column_is_a_boolean_column(self, index):
+        return index.column() in self._boolean_columns
+
+    def _row_has_a_track(self, index):
+        url = index.sibling(index.row(), Tracklist.Columns.url).data(Qt.DisplayRole)
+        return url is not None and url.strip()
 
     def setEditorData(self, editor, index):
         if self._column_is_time_column_and_has_data(index):
@@ -86,7 +101,7 @@ class TrackDelegate(QItemDelegate):
             time = DisplayTime(seconds)
             if type(editor) is QLineEdit:
                 editor.setText(time.as_time_str())
-        if index.column() in self._checkbox_columns:
+        if index.column() in self._boolean_columns:
             value = True if index.model().data(index, Qt.DisplayRole) else False
             index = editor.findData(value)
             editor.setCurrentIndex(index)
@@ -96,20 +111,20 @@ class TrackDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if self._column_is_time_column_and_has_data(index):
             model.setData(index, DisplayTime(editor.text()).as_seconds())
-        if index.column() in self._checkbox_columns:
+        if index.column() in self._boolean_columns:
             value = True if editor.itemData(editor.currentIndex()) else False
             model.setData(index, value)
         else:
             super().setModelData(editor, model, index)
 
     def createEditor(self, parent, option, index):
-        if self._column_is_a_read_only_column(index):
+        if not self._cell_should_have_editor_now(index):
             return None
         if self._column_is_a_time_column(index):
             line_edit = QLineEdit(parent)
             line_edit.editingFinished.connect(self._commit_and_close_editor)
             return line_edit
-        if index.column() in self._checkbox_columns:
+        if self._column_is_a_boolean_column(index):
             combobox = QComboBox(parent)
             combobox.addItem('No', False)
             combobox.addItem('Yes', True)
@@ -117,13 +132,15 @@ class TrackDelegate(QItemDelegate):
         else:
             return super().createEditor(parent, option, index)
 
-    def _column_is_time_column_and_has_data(self, index):
-        return (self._column_is_a_time_column(index)
-                and index.model().data(index, Qt.DisplayRole) is not None
-                and index.model().data(index, Qt.DisplayRole) != '')
+    def _cell_should_have_editor_now(self, index):
+        if index.column() == Tracklist.Columns.url:
+            return True
 
-    def _column_is_a_time_column(self, index):
-        return index.column() in self._time_columns
+        if self._row_has_a_track(index):
+            return True
+
+        if self._column_is_a_read_only_column(index):
+            return False
 
     def _column_is_a_read_only_column(self, index):
         return index.column() in self._read_only_columns
@@ -197,7 +214,7 @@ class Tracklist(QTableWidget):
             TrackDelegate(
                 read_only_columns=self.Columns.read_only,
                 time_columns=self.Columns.time,
-                checkbox_columns = self.Columns.checkbox
+                boolean_columns= self.Columns.checkbox
             )
         )
 
