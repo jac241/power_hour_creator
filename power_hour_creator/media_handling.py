@@ -21,7 +21,7 @@ def resource_path(relative_path):
 
 
 def ffmpeg_dir():
-    return resource_path(os.path.join(EXT_DIR, 'ffmpeg-3.2.2-win64-static/bin'))
+    return resource_path(os.path.join(EXT_DIR, 'ffmpeg-3.2.2-win32-static/bin'))
 
 
 def ffmpeg_exe():
