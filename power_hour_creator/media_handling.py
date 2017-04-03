@@ -49,7 +49,7 @@ class MediaFile:
         return self.track.title
 
     @property
-    def should_shorten_track(self):
+    def should_be_shortened(self):
         return not self.track.full_song
 
 
@@ -102,7 +102,7 @@ class CreatePowerHourService:
             download_path=os.path.join(download_dir, '{:05d}.m4a'.format(ydl._num_downloads))
         )
 
-        if media_file.should_shorten_track:
+        if media_file.should_be_shortened:
             self.shorten_to_one_minute(media_file)
         else:
             self.ensure_output_is_m4a(media_file)
