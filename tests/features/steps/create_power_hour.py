@@ -9,7 +9,7 @@ import re
 
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime
-from power_hour_creator.media_handling import TRACK_LENGTH
+from power_hour_creator.media import TRACK_LENGTH
 
 from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_cell_pos
 
@@ -108,7 +108,7 @@ def step_impl(context):
 
 def duration(file):
     import subprocess
-    from power_hour_creator.media_handling import ffmpeg_exe
+    from power_hour_creator.media import ffmpeg_exe
 
     cmd = [
         ffmpeg_exe(),

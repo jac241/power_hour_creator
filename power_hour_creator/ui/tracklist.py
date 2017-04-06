@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSortFilterProxyModel
 from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QAbstractItemView
 from PyQt5.QtWidgets import QCheckBox
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QHBoxLayout
@@ -15,7 +15,7 @@ import re
 
 from PyQt5.QtWidgets import QWidget
 
-from power_hour_creator.media_handling import DownloadError, Track, find_track
+from power_hour_creator.media import DownloadError, Track, find_track
 
 
 class DisplayTime:
@@ -133,14 +133,15 @@ class TrackDelegate(QItemDelegate):
             return super().createEditor(parent, option, index)
 
     def _cell_should_have_editor_now(self, index):
+        if self._column_is_a_read_only_column(index):
+            return False
+
         if index.column() == Tracklist.Columns.url:
             return True
 
         if self._row_has_a_track(index):
             return True
 
-        if self._column_is_a_read_only_column(index):
-            return False
 
     def _column_is_a_read_only_column(self, index):
         return index.column() in self._read_only_columns

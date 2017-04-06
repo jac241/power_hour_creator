@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, QMes
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
 
 from power_hour_creator import config
-from power_hour_creator.media_handling import CreatePowerHourService
+from power_hour_creator.media import CreatePowerHourService
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
 

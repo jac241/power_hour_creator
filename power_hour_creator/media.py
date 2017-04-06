@@ -95,7 +95,7 @@ class CreatePowerHourService:
                         self.error_callback(str(e))
 
     def create_track(self, track, ydl, download_dir):
-        ydl.download([track.url])
+        result = ydl.download([track.url])
 
         media_file = MediaFile(
             track=track,
@@ -142,18 +142,20 @@ class CreatePowerHourService:
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def ensure_output_is_m4a(self, media_file):
-        cmd = [
-            ffmpeg_exe(),
-            '-y',
-            '-i', media_file.download_path,
-            '-acodec', 'aac',
-            '-ar', '44100',
-            '-b:a', '192k',
-            media_file.output_path
-        ]
-
-        self.logger.debug('Converting {} to m4a with command {}'.format(media_file.track_title, ' '.join(cmd)))
-        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        # cmd = [
+        #     ffmpeg_exe(),
+        #     '-y',
+        #     '-i', media_file.download_path,
+        #     '-acodec', 'aac',
+        #     '-ar', '44100',
+        #     '-b:a', '192k',
+        #     media_file.output_path
+        # ]
+        #
+        # self.logger.debug('Converting {} to m4a with command {}'.format(media_file.track_title, ' '.join(cmd)))
+        # subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        import shutil
+        shutil.copyfile(media_file.download_path, media_file.output_path)
 
     def _write_output_track_list_to_file(self, output_tracks, concat_directive_path):
         with open(concat_directive_path, 'w') as f:

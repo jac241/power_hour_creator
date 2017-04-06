@@ -4,7 +4,7 @@ from PyQt5.QtTest import QTest
 from PyQt5.Qt import Qt
 from behave import *
 
-from power_hour_creator.media_handling import TRACK_LENGTH
+from power_hour_creator.media import TRACK_LENGTH
 from power_hour_creator.ui.tracklist import Tracklist
 
 Track = namedtuple('Track', 'url length')
