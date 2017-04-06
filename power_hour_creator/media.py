@@ -3,6 +3,7 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import logging
+import shutil
 
 from youtube_dl import YoutubeDL
 from youtube_dl.YoutubeDL import DownloadError
@@ -32,9 +33,14 @@ TRACK_LENGTH = 60
 
 
 class MediaFile:
-    def __init__(self, track, download_path):
+    def __init__(self, track, position, directory):
         self.track = track
-        self.download_path = download_path
+        self._position = position
+        self._directory = directory
+
+    @property
+    def track_url(self):
+        return self.track.url
 
     @property
     def track_start_time(self):
@@ -51,6 +57,83 @@ class MediaFile:
     @property
     def should_be_shortened(self):
         return not self.track.full_song
+
+    @property
+    def download_path(self):
+        return os.path.join(self._directory, '{:05d}.m4a'.format(self._position + 1))
+
+
+def get_audio_downloader(progress_listener, download_dir, logger):
+    audio_opts = {
+        'ffmpeg_location': ffmpeg_dir(),
+        'verbose': True,
+        'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
+        'format': 'bestaudio/best',
+        'logger': logger,
+        'progress_hooks': [progress_listener.on_download_progress],
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'm4a',
+            'preferredquality': '192'
+        }],
+    }
+    return YoutubeDL(audio_opts)
+
+
+class AudioProcessor:
+    def __init__(self, download_dir, progress_listener, downloader):
+        self._download_dir = download_dir
+        self._progress_listener = progress_listener
+        self._logger = logging.getLogger(__name__)
+        self._downloader = downloader
+
+    def process_file(self, media_file):
+        self._downloader.download([media_file.track_url])
+
+        if media_file.should_be_shortened:
+            self._shorten_to_one_minute(media_file)
+        else:
+            self._move_unprocessed_file_to_correct_path(media_file)
+
+    def merge_files_into_power_hour(self, output_files, power_hour_path):
+        concat_directive_path = os.path.join(self._download_dir, "concat_input.txt")
+        self._write_output_track_list_to_file(output_files, concat_directive_path)
+
+        cmd = [
+            ffmpeg_exe(),
+            '-y',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', concat_directive_path,
+            '-c', 'copy',
+            power_hour_path
+        ]
+        self._logger.info('Merging into power hour with command: {}'.format(" ".join(cmd)))
+        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    def _shorten_to_one_minute(self, media_file):
+        cmd = [
+            ffmpeg_exe(),
+            '-y',
+            '-ss', str(media_file.track_start_time),
+            '-t', '{}'.format(TRACK_LENGTH),
+            '-i', media_file.download_path,
+            '-acodec', 'copy',
+            '-ar', '44100',
+            '-b:a', '192k',
+            media_file.output_path
+        ]
+
+        self._logger.debug('Shortening {} to 1 minute with cmd: {}'.format(media_file.track_title, ' '.join(cmd)))
+        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    def _move_unprocessed_file_to_correct_path(self, media_file):
+        shutil.copyfile(media_file.download_path, media_file.output_path)
+
+    def _write_output_track_list_to_file(self, output_tracks, concat_directive_path):
+        with open(concat_directive_path, 'w') as f:
+            for track_path in output_tracks:
+                f.write("file '{}'{}".format(track_path, os.linesep))
 
 
 class CreatePowerHourService:
@@ -78,86 +161,28 @@ class CreatePowerHourService:
                         'preferredquality': '192'
                     }],
                 }
-                with YoutubeDL(opts) as ydl:
-                    try:
-                        output_tracks = []
-                        for index, track in enumerate(self.tracks):
-                            self._progress_listener.on_new_track_downloading(index, track)
-                            output_tracks.append(self.create_track(track, ydl, download_dir))
+                processor = AudioProcessor(
+                    download_dir=download_dir,
+                    progress_listener=self._progress_listener,
+                    downloader=YoutubeDL(opts))
+                try:
+                    output_files = []
+                    for index, track in enumerate(self.tracks):
+                        self._progress_listener.on_new_track_downloading(index, track)
 
-                        self.merge_tracks_into_power_hour(output_tracks, download_dir)
-                    except subprocess.CalledProcessError as e:
-                        self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
-                    except FileNotFoundError as e:
-                        self._progress_listener.on_service_error(str(e))
+                        media_file = MediaFile(
+                            track=track,
+                            position=index,
+                            directory=download_dir)
 
-    def create_track(self, track, ydl, download_dir):
-        result = ydl.download([track.url])
+                        processor.process_file(media_file)
+                        output_files.append(media_file.output_path)
 
-        media_file = MediaFile(
-            track=track,
-            download_path=os.path.join(download_dir, '{:05d}.m4a'.format(ydl._num_downloads))
-        )
-
-        if media_file.should_be_shortened:
-            self.shorten_to_one_minute(media_file)
-        else:
-            self.ensure_output_is_m4a(media_file)
-
-        return media_file.output_path
-
-    def shorten_to_one_minute(self, media_file):
-        cmd = [
-            ffmpeg_exe(),
-           '-y',
-           '-ss', str(media_file.track_start_time),
-           '-t', '{}'.format(TRACK_LENGTH),
-           '-i', media_file.download_path,
-           '-acodec', 'aac',
-           '-ar', '44100',
-           '-b:a', '192k',
-           media_file.output_path
-        ]
-
-        self.logger.debug('Shortening {} to 1 minute with cmd: {}'.format(media_file.track_title, ' '.join(cmd)))
-        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-
-    def merge_tracks_into_power_hour(self, output_tracks, download_dir):
-        concat_directive_path = os.path.join(download_dir, "concat_input.txt")
-        self._write_output_track_list_to_file(output_tracks, concat_directive_path)
-
-        cmd = [
-            ffmpeg_exe(),
-            '-y',
-            '-f', 'concat',
-            '-safe', '0',
-            '-i', concat_directive_path,
-            '-c', 'copy',
-            self.power_hour_path
-        ]
-        self.logger.info('Merging into power hour with command: {}'.format(" ".join(cmd)))
-        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-
-    def ensure_output_is_m4a(self, media_file):
-        # cmd = [
-        #     ffmpeg_exe(),
-        #     '-y',
-        #     '-i', media_file.download_path,
-        #     '-acodec', 'aac',
-        #     '-ar', '44100',
-        #     '-b:a', '192k',
-        #     media_file.output_path
-        # ]
-        #
-        # self.logger.debug('Converting {} to m4a with command {}'.format(media_file.track_title, ' '.join(cmd)))
-        # subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        import shutil
-        shutil.copyfile(media_file.download_path, media_file.output_path)
-
-    def _write_output_track_list_to_file(self, output_tracks, concat_directive_path):
-        with open(concat_directive_path, 'w') as f:
-            for track_path in output_tracks:
-                f.write("file '{}'{}".format(track_path, os.linesep))
+                    processor.merge_files_into_power_hour(output_files, self.power_hour_path)
+                except subprocess.CalledProcessError as e:
+                    self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
+                except FileNotFoundError as e:
+                    self._progress_listener.on_service_error(str(e))
 
 
 @attr.s
