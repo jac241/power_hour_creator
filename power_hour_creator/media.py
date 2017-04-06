@@ -54,13 +54,10 @@ class MediaFile:
 
 
 class CreatePowerHourService:
-    def __init__(self, tracks, power_hour_path, new_track_downloading_callback, download_progress_callback,
-                 error_callback):
+    def __init__(self, tracks, power_hour_path, progress_listener):
         self.tracks = tracks
         self.power_hour_path = power_hour_path
-        self.new_track_downloading_callback = new_track_downloading_callback
-        self.download_progress_callback = download_progress_callback
-        self.error_callback = error_callback
+        self._progress_listener = progress_listener
         self.logger = logging.getLogger(__name__)
 
     def execute(self):
@@ -74,7 +71,7 @@ class CreatePowerHourService:
                     'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
                     'format': 'bestaudio/best',
                     'logger': self.logger,
-                    'progress_hooks': [self.download_progress_callback],
+                    'progress_hooks': [self._progress_listener.on_download_progress],
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'm4a',
@@ -85,14 +82,14 @@ class CreatePowerHourService:
                     try:
                         output_tracks = []
                         for index, track in enumerate(self.tracks):
-                            self.new_track_downloading_callback(index, track)
+                            self._progress_listener.on_new_track_downloading(index, track)
                             output_tracks.append(self.create_track(track, ydl, download_dir))
 
                         self.merge_tracks_into_power_hour(output_tracks, download_dir)
                     except subprocess.CalledProcessError as e:
-                        self.error_callback('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
+                        self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
                     except FileNotFoundError as e:
-                        self.error_callback(str(e))
+                        self._progress_listener.on_service_error(str(e))
 
     def create_track(self, track, ydl, download_dir):
         result = ydl.download([track.url])

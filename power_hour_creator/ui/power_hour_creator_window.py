@@ -144,19 +144,17 @@ class PowerHourExportThread(QThread):
         service = CreatePowerHourService(
             self._power_hour.tracks,
             self._power_hour.file_name,
-            new_track_downloading_callback=self.handle_new_track_downloading,
-            download_progress_callback=self.handle_download_progress,
-            error_callback=self.handle_service_error)
+            progress_listener=self)
 
         service.execute()
 
         self.finished.emit()
 
-    def handle_new_track_downloading(self, download_number, track):
+    def on_new_track_downloading(self, download_number, track):
         self.progress.emit(download_number)
         self.new_track_downloading.emit(track)
 
-    def handle_download_progress(self, info):
+    def on_download_progress(self, info):
         total_bytes = 1
         if 'total_bytes_estimate' in info:
             total_bytes = info['total_bytes_estimate']
@@ -164,6 +162,6 @@ class PowerHourExportThread(QThread):
             total_bytes = info['total_bytes']
         self.track_download_progress.emit(info['downloaded_bytes'], total_bytes)
 
-    def handle_service_error(self, message):
+    def on_service_error(self, message):
         self.error.emit(message)
 
