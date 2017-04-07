@@ -13,6 +13,11 @@ tracks = [
     Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
 ]
 
+videos = [
+    Track('https://www.youtube.com/watch?v=XSVunk2LUAo', 202),
+    Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
+]
+
 
 @when('I add {num_tracks} tracks to a power hour')
 def step_impl(context, num_tracks):
@@ -20,14 +25,16 @@ def step_impl(context, num_tracks):
         add_song_to_tracklist(context)
 
 
-def add_song_to_tracklist(context, full_song=False):
+def add_song_to_tracklist(context, full_song=False, video=False):
     viewport = context.main_window.tracklist.viewport()
 
     current_row = context.num_tracks + 1
     url_cell_pos = tracklist_cell_pos(context, row=current_row, column=Tracklist.Columns.url)
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
-    track = tracks[context.num_tracks % len(tracks)]
+
+    track = videos[context.num_tracks % len(videos)] if video else tracks[context.num_tracks % len(tracks)]
+
     QTest.keyClicks(viewport.focusWidget(), track.url)
     QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
 

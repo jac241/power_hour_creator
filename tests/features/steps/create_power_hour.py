@@ -9,7 +9,7 @@ import re
 
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime
-from power_hour_creator.media import TRACK_LENGTH
+from power_hour_creator.media import TRACK_LENGTH, MediaFile
 
 from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_cell_pos
 
@@ -25,8 +25,8 @@ def step_impl(context):
 
     context.export_path = os.path.join(context.support_path, 'exports/test.m4a')
 
-    context.main_window.get_export_path = Mock()
-    context.main_window.get_export_path.return_value = context.export_path
+    context.main_window.get_power_hour_path = Mock()
+    context.main_window.get_power_hour_path.return_value = context.export_path
 
     QTest.mouseClick(context.main_window.createPowerHourButton, Qt.LeftButton)
 
@@ -40,18 +40,23 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
+    wait_for_power_hour_creation(context)
+
+    assert_that(os.path.exists(context.export_path), is_(True))
+    assert_power_hour_is_correct_length(context)
+
+
+def wait_for_power_hour_creation(context):
     def export_dialog_visible():
-        export_dialog = next((w for w in context.app.topLevelWidgets() if type(w) is ExportPowerHourDialog), None)
+        export_dialog = next((w for w in context.app.topLevelWidgets() if
+                              type(w) is ExportPowerHourDialog), None)
         return export_dialog.isVisible()
 
     start = time.time()
     while export_dialog_visible():
-        if time.time() - start > 120:
+        if time.time() - start > 300:
             break
         QTest.qWait(100)
-
-    assert_that(os.path.exists(context.export_path), is_(True))
-    assert_power_hour_is_correct_length(context)
 
 
 @step("I click around the tracklist start times")
@@ -130,3 +135,44 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     add_song_to_tracklist(context, full_song=True)
+
+
+@when("I add 2 videos to a video power hour with one full song")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    add_song_to_tracklist(context, video=True)
+    add_song_to_tracklist(context, full_song=True, video=True)
+
+
+@step("I create a video power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    context.main_window.videoCheckBox.setCheckState(Qt.Checked)
+
+    context.export_path = os.path.join(context.support_path, 'exports/test.mp4')
+
+    context.main_window.get_power_hour_path = Mock()
+    context.main_window.get_power_hour_path.return_value = context.export_path
+
+    QTest.mouseClick(context.main_window.createPowerHourButton, Qt.LeftButton)
+
+
+def assert_power_hour_is_a_video(context):
+    info = MediaFile.read_info(context.export_path)
+    assert_that(info['streams'][0]['codec_type'], is_('video'))
+
+
+@then("that video power hour should have been created")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    wait_for_power_hour_creation(context)
+
+    assert_that(os.path.exists(context.export_path), is_(True))
+    assert_power_hour_is_correct_length(context)
+    assert_power_hour_is_a_video(context)

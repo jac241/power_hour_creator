@@ -1,9 +1,11 @@
 import os
 import subprocess
 import sys
+from collections import namedtuple
 from tempfile import TemporaryDirectory
 import logging
 import shutil
+import json
 
 from youtube_dl import YoutubeDL
 from youtube_dl.YoutubeDL import DownloadError
@@ -29,14 +31,18 @@ def ffmpeg_exe():
     return os.path.join(ffmpeg_dir(), 'ffmpeg')
 
 
+def ffprobe_exe():
+    return os.path.join(ffmpeg_dir(), 'ffprobe')
+
 TRACK_LENGTH = 60
 
 
 class MediaFile:
-    def __init__(self, track, position, directory):
+    def __init__(self, track, position, directory, is_video):
         self.track = track
         self._position = position
         self._directory = directory
+        self.is_video = is_video
 
     @property
     def track_url(self):
@@ -55,12 +61,33 @@ class MediaFile:
         return self.track.title
 
     @property
+    def extension(self):
+        return 'mp4' if self.is_video else 'm4a'
+
+    @property
     def should_be_shortened(self):
         return not self.track.full_song
 
     @property
     def download_path(self):
-        return os.path.join(self._directory, '{:05d}.m4a'.format(self._position + 1))
+        return os.path.join(self._directory, '{:05d}.{}'.format(self._position + 1, self.extension))
+
+    @property
+    def info(self):
+        return self.__class__.read_info(self.download_path)
+
+    @staticmethod
+    def read_info(path):
+        cmd = [
+            ffprobe_exe(),
+            '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_format',
+            '-show_streams',
+            path
+        ]
+        output = subprocess.check_output(cmd, stderr=subprocess.PIPE, stdin=subprocess.PIPE).decode()
+        return json.loads(output)
 
 
 def get_audio_downloader(progress_listener, download_dir, logger):
@@ -69,7 +96,7 @@ def get_audio_downloader(progress_listener, download_dir, logger):
         'verbose': True,
         'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
         'format': 'bestaudio/best',
-        'logger': logger,
+        '_logger': logger,
         'progress_hooks': [progress_listener.on_download_progress],
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -80,16 +107,91 @@ def get_audio_downloader(progress_listener, download_dir, logger):
     return YoutubeDL(audio_opts)
 
 
-class AudioProcessor:
+class CreatePowerHourService:
+    def __init__(self, power_hour, progress_listener):
+        self._power_hour = power_hour
+        self._progress_listener = progress_listener
+        self._logger = logging.getLogger(__name__)
+
+    def execute(self):
+        with TemporaryDirectory() as download_dir:
+            self._logger.debug("ffmpeg location : %s", ffmpeg_dir())
+            self._logger.debug("ffmpeg found: %s", os.path.exists(ffmpeg_dir()))
+
+            processor = self._build_media_processor(download_dir)
+
+            try:
+                output_files = []
+                for index, track in enumerate(self._power_hour.tracks):
+                    self._progress_listener.on_new_track_downloading(index, track)
+
+                    media_file = MediaFile(
+                        track=track,
+                        position=index,
+                        directory=download_dir,
+                        is_video=self._power_hour.is_video
+                    )
+
+                    processor.process_file(media_file)
+                    output_files.append(media_file.output_path)
+
+                processor.merge_files_into_power_hour(output_files, self._power_hour.path)
+            except subprocess.CalledProcessError as e:
+                self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
+            except FileNotFoundError as e:
+                self._progress_listener.on_service_error(str(e))
+
+    def _build_media_processor(self, download_dir):
+        shared_opts = {
+            'ffmpeg_location': ffmpeg_dir(),
+            'verbose': True,
+            'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
+            '_logger': self._logger,
+            'progress_hooks': [self._progress_listener.on_download_progress],
+        }
+        if self._power_hour.is_video:
+            video_opts = {
+                'format': '(mp4)[height<=720]',
+            }
+            return VideoProcessor(
+                download_dir=download_dir,
+                progress_listener=self._progress_listener,
+                downloader=YoutubeDL({**shared_opts, **video_opts})
+            )
+        else:
+            audio_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'm4a',
+                    'preferredquality': '192'
+                }],
+            }
+            return AudioProcessor(
+                download_dir=download_dir,
+                progress_listener=self._progress_listener,
+                downloader=YoutubeDL({**shared_opts, **audio_opts})
+            )
+
+
+class MediaProcessor:
     def __init__(self, download_dir, progress_listener, downloader):
         self._download_dir = download_dir
         self._progress_listener = progress_listener
-        self._logger = logging.getLogger(__name__)
         self._downloader = downloader
+        self._logger = logging.getLogger(__name__)
 
     def process_file(self, media_file):
         self._downloader.download([media_file.track_url])
+        self.after_download(media_file)
 
+    def after_download(self, media_file):
+        raise NotImplementedError
+
+
+class AudioProcessor(MediaProcessor):
+
+    def after_download(self, media_file):
         if media_file.should_be_shortened:
             self._shorten_to_one_minute(media_file)
         else:
@@ -136,53 +238,106 @@ class AudioProcessor:
                 f.write("file '{}'{}".format(track_path, os.linesep))
 
 
-class CreatePowerHourService:
-    def __init__(self, tracks, power_hour_path, progress_listener):
-        self.tracks = tracks
-        self.power_hour_path = power_hour_path
-        self._progress_listener = progress_listener
-        self.logger = logging.getLogger(__name__)
+class VideoProcessor(MediaProcessor):
 
-    def execute(self):
-            with TemporaryDirectory() as download_dir:
-                self.logger.debug("ffmpeg location : %s", ffmpeg_dir())
-                self.logger.debug("ffmpeg found: %s", os.path.exists(ffmpeg_dir()))
+    def after_download(self, media_file):
+        self._ensure_frame_rate_and_resolution_are_correct(media_file)
 
-                opts = {
-                    'ffmpeg_location': ffmpeg_dir(),
-                    'verbose': True,
-                    'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
-                    'format': 'bestaudio/best',
-                    'logger': self.logger,
-                    'progress_hooks': [self._progress_listener.on_download_progress],
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'm4a',
-                        'preferredquality': '192'
-                    }],
-                }
-                processor = AudioProcessor(
-                    download_dir=download_dir,
-                    progress_listener=self._progress_listener,
-                    downloader=YoutubeDL(opts))
-                try:
-                    output_files = []
-                    for index, track in enumerate(self.tracks):
-                        self._progress_listener.on_new_track_downloading(index, track)
+    def merge_files_into_power_hour(self, output_files, power_hour_path):
+        filter_strings = []
+        for index in range(len(output_files)):
+            filter_strings.append('[{}:v:0] [{}:a:0]'.format(index, index))
+        filter_complex = '{} concat=n={}:v=1:a=1 [v] [a]'.format(' '.join(filter_strings), len(output_files))
 
-                        media_file = MediaFile(
-                            track=track,
-                            position=index,
-                            directory=download_dir)
+        input_directives = []
+        for file in output_files:
+            input_directives.append('-i')
+            input_directives.append(file)
 
-                        processor.process_file(media_file)
-                        output_files.append(media_file.output_path)
+        cmd = [
+            ffmpeg_exe(),
+            *input_directives,
+            '-filter_complex', filter_complex,
+            '-map', '[v]',
+            '-map', '[a]',
+            '-acodec', 'aac',
+            '-vcodec', 'libx264',
+            '-s', '1280x720',
+            '-r', '30',
+            '-preset', 'faster',
+            power_hour_path
+        ]
 
-                    processor.merge_files_into_power_hour(output_files, self.power_hour_path)
-                except subprocess.CalledProcessError as e:
-                    self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
-                except FileNotFoundError as e:
-                    self._progress_listener.on_service_error(str(e))
+        self._logger.debug('Combining videos into power hour with cmd: {}'.format(' '.join(cmd)))
+        # subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        self._log_process_output(p)
+
+        self._logger.debug('Done')
+
+
+
+    def _ensure_frame_rate_and_resolution_are_correct(self, media_file):
+        if not self._frame_rate_and_resolution_are_correct(media_file):
+            self._convert_video_to_correct_attributes(media_file)
+            self._move_file_back_to_download_path(media_file)
+
+        if media_file.should_be_shortened:
+            self._shorten_to_one_minute(media_file)
+
+    def _frame_rate_and_resolution_are_correct(self, media_file):
+        info = self._video_stream_info(media_file)
+        return info['height'] == 720 and info['width'] == 1280 and info['avg_frame_rate'] == '30000/1001'
+
+    def _video_stream_info(self, media_file):
+        return media_file.info['streams'][0]
+
+    def _convert_video_to_correct_attributes(self, media_file):
+        cmd = [
+            ffmpeg_exe(),
+            '-i', media_file.download_path,
+            '-y',
+            '-acodec', 'aac',
+            '-vcodec', 'libx264',
+            '-s', '1280x720',
+            '-r', '30',
+            '-preset', 'faster',
+            '-nostdin',
+            media_file.output_path
+        ]
+
+        self._logger.debug('Resizing and correcting video {} with command: {}'.format(media_file.track_title, ' '.join(cmd)))
+        # subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        self._log_process_output(p)
+
+        self._logger.debug('Done')
+
+    def _log_process_output(self, p):
+        while True:
+            line = p.stdout.readline().decode().strip()
+            self._logger.debug(line),
+            if line == '' and p.poll() is not None:
+                break
+
+    def _move_file_back_to_download_path(self, media_file):
+        shutil.copyfile(media_file.output_path, media_file.download_path)
+
+    def _shorten_to_one_minute(self, media_file):
+        cmd = [
+            ffmpeg_exe(),
+            '-y',
+            '-ss', str(media_file.track_start_time),
+            '-t', '{}'.format(TRACK_LENGTH),
+            '-i', media_file.download_path,
+            '-codec', 'copy',
+            media_file.output_path
+        ]
+
+        self._logger.debug('Shortening {} to 1 minute with cmd: {}'.format(media_file.track_title, ' '.join(cmd)))
+        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
 
 @attr.s
@@ -225,3 +380,6 @@ class FindMediaDescriptionService:
 def find_track(url):
     service = FindMediaDescriptionService(url, downloader=YoutubeDL())
     return service.execute()
+
+
+PowerHour = namedtuple('PowerHour', 'tracks path is_video')

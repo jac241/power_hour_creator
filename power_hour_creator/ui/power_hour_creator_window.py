@@ -1,19 +1,13 @@
-from collections import namedtuple
-
 import os
 
-from pprint import pprint
-
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, QMessageBox
-from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, \
+    QMessageBox
 
 from power_hour_creator import config
-from power_hour_creator.media import CreatePowerHourService
+from power_hour_creator.media import CreatePowerHourService, PowerHour
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
-
-
-PowerHour = namedtuple('PowerHour', 'tracks file_name')
 
 
 class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
@@ -62,11 +56,10 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         msg.show()
 
     def _export_power_hour(self):
-        file_name = self.get_export_path()
-        if file_name:
-            file_name = self._ensure_file_has_correct_ext(file_name)
-
-            power_hour = PowerHour(self.tracklist.tracks, file_name)
+        is_video = self.videoCheckBox.checkState()
+        power_hour_path = self.get_power_hour_path(is_video=is_video)
+        if power_hour_path:
+            power_hour = PowerHour(self.tracklist.tracks, power_hour_path, is_video)
             thread = PowerHourExportThread(self, power_hour)
             progress_dialog = ExportPowerHourDialog(self, power_hour)
 
@@ -80,16 +73,15 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             progress_dialog.show()
             thread.start()
 
-
-    def _ensure_file_has_correct_ext(self, file_name):
-        if not file_name.lower().endswith('.m4a'):
-            file_name += '.m4a'
-        return file_name
-
-    def get_export_path(self):
-        return QFileDialog.getSaveFileName(self, "Export Power Hour",
-                                           os.path.expanduser('~/Music'),
-                                           "Audio (*.m4a)")[0]
+    def get_power_hour_path(self, is_video):
+        if is_video:
+            return QFileDialog.getSaveFileName(self, "Export Power Hour",
+                                               os.path.expanduser('~/Videos'),
+                                               "Video (*.mp4)")[0]
+        else:
+            return QFileDialog.getSaveFileName(self, "Export Power Hour",
+                                               os.path.expanduser('~/Music'),
+                                               "Audio (*.m4a)")[0]
 
     def _show_finished_status(self):
         self.statusBar.showMessage("Power hour created!", 5000)
@@ -142,8 +134,7 @@ class PowerHourExportThread(QThread):
 
     def run(self):
         service = CreatePowerHourService(
-            self._power_hour.tracks,
-            self._power_hour.file_name,
+            power_hour=self._power_hour,
             progress_listener=self)
 
         service.execute()

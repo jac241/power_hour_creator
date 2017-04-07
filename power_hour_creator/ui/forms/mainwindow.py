@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\designer\mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.7
+# Created by: PyQt5 UI code generator 5.8.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -156,7 +156,7 @@ class Ui_mainWindow(object):
         self.createPowerHourButton = QtWidgets.QPushButton(self.centralWidget)
         self.createPowerHourButton.setEnabled(False)
         self.createPowerHourButton.setObjectName("createPowerHourButton")
-        self.gridLayout.addWidget(self.createPowerHourButton, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.createPowerHourButton, 3, 0, 1, 1)
         self.tracklist = Tracklist(self.centralWidget)
         self.tracklist.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
         self.tracklist.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -186,6 +186,9 @@ class Ui_mainWindow(object):
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.tracklistControls.addItem(spacerItem)
         self.gridLayout.addLayout(self.tracklistControls, 1, 0, 1, 1)
+        self.videoCheckBox = QtWidgets.QCheckBox(self.centralWidget)
+        self.videoCheckBox.setObjectName("videoCheckBox")
+        self.gridLayout.addWidget(self.videoCheckBox, 2, 0, 1, 1)
         mainWindow.setCentralWidget(self.centralWidget)
         self.menubar = QtWidgets.QMenuBar(mainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 750, 21))
@@ -222,6 +225,7 @@ class Ui_mainWindow(object):
         item = self.tracklist.horizontalHeaderItem(4)
         item.setText(_translate("mainWindow", "Full Song?"))
         self.addTrackButton.setText(_translate("mainWindow", "Add Track"))
+        self.videoCheckBox.setText(_translate("mainWindow", "Video?"))
         self.menuFile.setTitle(_translate("mainWindow", "File"))
         self.menuHelp.setTitle(_translate("mainWindow", "Help"))
         self.actionShow_logs.setText(_translate("mainWindow", "Show logs"))

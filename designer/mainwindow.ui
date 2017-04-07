@@ -430,7 +430,7 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="0">
+    <item row="3" column="0">
      <widget class="QPushButton" name="createPowerHourButton">
       <property name="enabled">
        <bool>false</bool>
@@ -576,6 +576,13 @@
        </spacer>
       </item>
      </layout>
+    </item>
+    <item row="2" column="0">
+     <widget class="QCheckBox" name="videoCheckBox">
+      <property name="text">
+       <string>Video?</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

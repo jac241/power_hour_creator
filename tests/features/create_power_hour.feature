@@ -17,3 +17,9 @@ Feature: Create power hour
   Scenario: I should not be able to create a power hour if I haven't entered a url
     When I forget to add a track to the power hour
     Then I should not be able to create a power hour
+
+  Scenario: I should be able to create a video power hour with all the features
+    When I add 2 videos to a video power hour with one full song
+    And I set track 1's start time to 0:00
+    And I create a video power hour
+    Then that video power hour should have been created
