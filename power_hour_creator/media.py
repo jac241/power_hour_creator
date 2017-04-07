@@ -265,6 +265,7 @@ class VideoProcessor(MediaProcessor):
             '-s', '1280x720',
             '-r', '30',
             '-preset', 'faster',
+            '-nostdin',
             power_hour_path
         ]
 
@@ -279,16 +280,19 @@ class VideoProcessor(MediaProcessor):
 
 
     def _ensure_frame_rate_and_resolution_are_correct(self, media_file):
+        if media_file.should_be_shortened:
+            self._shorten_to_one_minute(media_file)
+            self._move_file_back_to_download_path(media_file)
+
         if not self._frame_rate_and_resolution_are_correct(media_file):
             self._convert_video_to_correct_attributes(media_file)
             self._move_file_back_to_download_path(media_file)
 
-        if media_file.should_be_shortened:
-            self._shorten_to_one_minute(media_file)
+        self._move_file_to_output_path(media_file)
 
     def _frame_rate_and_resolution_are_correct(self, media_file):
         info = self._video_stream_info(media_file)
-        return info['height'] == 720 and info['width'] == 1280 and info['avg_frame_rate'] == '30000/1001'
+        return info['height'] == 720 and info['width'] == 1280
 
     def _video_stream_info(self, media_file):
         return media_file.info['streams'][0]
@@ -300,7 +304,7 @@ class VideoProcessor(MediaProcessor):
             '-y',
             '-acodec', 'aac',
             '-vcodec', 'libx264',
-            '-s', '1280x720',
+            '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
             '-r', '30',
             '-preset', 'faster',
             '-nostdin',
@@ -338,6 +342,9 @@ class VideoProcessor(MediaProcessor):
 
         self._logger.debug('Shortening {} to 1 minute with cmd: {}'.format(media_file.track_title, ' '.join(cmd)))
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    def _move_file_to_output_path(self, media_file):
+        shutil.copyfile(media_file.download_path, media_file.output_path)
 
 
 @attr.s
