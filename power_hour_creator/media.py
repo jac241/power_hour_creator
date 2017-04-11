@@ -260,6 +260,7 @@ class VideoProcessor(MediaProcessor):
             '-filter_complex', filter_complex,
             '-map', '[v]',
             '-map', '[a]',
+            '-y',
             '-acodec', 'aac',
             '-vcodec', 'libx264',
             '-s', '1280x720',

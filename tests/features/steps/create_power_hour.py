@@ -1,4 +1,6 @@
 import time
+
+from PyQt5.QtWidgets import QApplication
 from behave import *
 from PyQt5.QtTest import QTest
 from PyQt5.Qt import Qt, QPoint
@@ -8,7 +10,8 @@ import os
 import re
 
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
-from power_hour_creator.ui.tracklist import DisplayTime
+from power_hour_creator.ui.tracklist import DisplayTime, Tracklist, \
+    DEFAULT_NUM_TRACKS
 from power_hour_creator.media import TRACK_LENGTH, MediaFile
 
 from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_cell_pos
@@ -176,3 +179,65 @@ def step_impl(context):
     assert_that(os.path.exists(context.export_path), is_(True))
     assert_power_hour_is_correct_length(context)
     assert_power_hour_is_a_video(context)
+
+
+@when("I right click on the url of a row")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    viewport = context.main_window.tracklist.viewport()
+    QTest.qWait(1000)
+    url_cell_pos = tracklist_cell_pos(context, row=1, column=Tracklist.Columns.url)
+
+    # Right click doesn't work for some reason...
+    # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
+
+    context.tracklist._build_custom_menu(url_cell_pos)
+
+
+@step("I add a track to the power hour at row {pos}")
+def step_impl(context, pos):
+    """
+    :type context: behave.runner.Context
+    """
+    add_song_to_tracklist(context, pos=int(pos))
+
+
+@step("I choose to insert a row below this row with the context menu")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    viewport = context.main_window.tracklist.viewport()
+    url_cell_pos = tracklist_cell_pos(context, row=1, column=Tracklist.Columns.url)
+
+    QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
+    # Right click doesn't work for some reason...
+    # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
+
+    context.tracklist._build_custom_menu(url_cell_pos)
+
+    menu = QApplication.activePopupWidget()
+    QTest.keyClick(menu, Qt.Key_Down)
+    QTest.keyClick(menu, Qt.Key_Enter)
+
+
+@then("the row count should have increased")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that(context.main_window.tracklist.rowCount(),
+                greater_than(DEFAULT_NUM_TRACKS))
+
+
+@step("the second track should be above the first")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    first_track = context.tracklist.tracks[0]
+    assert_that(first_track.url, is_(context.last_track_added.url))
+
+

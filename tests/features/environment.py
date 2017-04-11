@@ -34,6 +34,7 @@ def close_app(context):
 
 
 def delete_export_files(context):
-    export_files = glob.glob(os.path.join(context.support_path, "exports/*.aac"))
-    for f in export_files:
-        os.remove(f)
+    for ext in ['m4a', 'mp4']:
+        export_files = glob.glob(os.path.join(context.support_path, "exports/*.{}".format(ext)))
+        for f in export_files:
+            os.remove(f)

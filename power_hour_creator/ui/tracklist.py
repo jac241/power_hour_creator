@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSortFilterProxyModel
 from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QApplication, QAbstractItemView
+from PyQt5.QtWidgets import QApplication, QAbstractItemView, QMenu, QAction
 from PyQt5.QtWidgets import QCheckBox
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QHBoxLayout
@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import QWidget
 
 from power_hour_creator.media import DownloadError, Track, find_track
 
+DEFAULT_NUM_TRACKS = 60
 
 class DisplayTime:
     def __init__(self, time):
@@ -171,6 +172,7 @@ class Tracklist(QTableWidget):
         super().__init__(parent)
         self._setup_delegate()
         self._setup_signals()
+        self._setup_context_menu()
 
     def add_track(self):
         self.insertRow(self.rowCount())
@@ -247,3 +249,18 @@ class Tracklist(QTableWidget):
     def _last_row_index(self):
         return self.rowCount() - 1
 
+    def _setup_context_menu(self):
+        self.customContextMenuRequested.connect(self._build_custom_menu)
+
+    def _build_custom_menu(self, position):
+        menu = QMenu(self)
+
+        insert_above = QAction('Insert Row Above', self)
+        insert_above.triggered.connect(self._insert_row_above)
+        menu.addAction(insert_above)
+
+        action = menu.popup(self.viewport().mapToGlobal(position))
+
+    def _insert_row_above(self):
+        selected_row = self.selectedIndexes()[0].row()
+        self.insertRow(selected_row)

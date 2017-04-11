@@ -25,15 +25,16 @@ def step_impl(context, num_tracks):
         add_song_to_tracklist(context)
 
 
-def add_song_to_tracklist(context, full_song=False, video=False):
+def add_song_to_tracklist(context, full_song=False, video=False, pos=None):
     viewport = context.main_window.tracklist.viewport()
 
-    current_row = context.num_tracks + 1
+    current_row = pos or context.num_tracks + 1
     url_cell_pos = tracklist_cell_pos(context, row=current_row, column=Tracklist.Columns.url)
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
 
     track = videos[context.num_tracks % len(videos)] if video else tracks[context.num_tracks % len(tracks)]
+    context.last_track_added = track
 
     QTest.keyClicks(viewport.focusWidget(), track.url)
     QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
@@ -42,7 +43,6 @@ def add_song_to_tracklist(context, full_song=False, video=False):
         full_song_cell_pos = tracklist_cell_pos(context, row=current_row, column=Tracklist.Columns.full_song)
         QTest.mouseClick(viewport, Qt.LeftButton, pos=full_song_cell_pos)
         QTest.keyClick(viewport.focusWidget(), Qt.Key_Down)
-        QTest.qWait(5000)
 
     context.num_tracks += 1
     context.prhr_length += track.length if full_song else TRACK_LENGTH
