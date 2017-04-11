@@ -24,9 +24,17 @@ Feature: Create power hour
     And I create a video power hour
     Then that video power hour should have been created
 
-  Scenario: I should be able to add a row with a right click menu
+  Scenario: I should be able to add a track above with the right click menu
     When I add a track to the power hour at row 1
-    And I choose to insert a row below this row with the context menu
+    And I choose to insert a row above row 1 with the context menu
     And I add a track to the power hour at row 1
     Then the row count should have increased
     And the second track should be above the first
+
+  Scenario: I should be able to add a track below with the right click menu
+    When I add a track to the power hour at row 1
+    And I add a track to the power hour at row 2
+    And I choose to insert a row below row 1 with the context menu
+    And I add a track to the power hour at row 2
+    Then the row count should have increased
+    And there should be three tracks in the power hour

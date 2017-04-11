@@ -255,12 +255,20 @@ class Tracklist(QTableWidget):
     def _build_custom_menu(self, position):
         menu = QMenu(self)
 
-        insert_above = QAction('Insert Row Above', self)
+        insert_above = QAction('Insert Track Above', self)
         insert_above.triggered.connect(self._insert_row_above)
         menu.addAction(insert_above)
 
-        action = menu.popup(self.viewport().mapToGlobal(position))
+        insert_below = QAction('Insert Track Below', self)
+        insert_below.triggered.connect(self._insert_row_below)
+        menu.addAction(insert_below)
+
+        menu.popup(self.viewport().mapToGlobal(position))
 
     def _insert_row_above(self):
         selected_row = self.selectedIndexes()[0].row()
         self.insertRow(selected_row)
+
+    def _insert_row_below(self):
+        last_selected_row = self.selectedIndexes()[-1].row()
+        self.insertRow(last_selected_row + 1)

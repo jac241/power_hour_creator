@@ -204,13 +204,13 @@ def step_impl(context, pos):
     add_song_to_tracklist(context, pos=int(pos))
 
 
-@step("I choose to insert a row below this row with the context menu")
-def step_impl(context):
+@step("I choose to insert a row {direction} row {pos} with the context menu")
+def step_impl(context, direction, pos):
     """
     :type context: behave.runner.Context
     """
     viewport = context.main_window.tracklist.viewport()
-    url_cell_pos = tracklist_cell_pos(context, row=1, column=Tracklist.Columns.url)
+    url_cell_pos = tracklist_cell_pos(context, row=int(pos), column=Tracklist.Columns.url)
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
     # Right click doesn't work for some reason...
@@ -219,7 +219,11 @@ def step_impl(context):
     context.tracklist._build_custom_menu(url_cell_pos)
 
     menu = QApplication.activePopupWidget()
+
     QTest.keyClick(menu, Qt.Key_Down)
+    if direction == 'below':
+        QTest.keyClick(menu, Qt.Key_Down)
+
     QTest.keyClick(menu, Qt.Key_Enter)
 
 
@@ -241,3 +245,9 @@ def step_impl(context):
     assert_that(first_track.url, is_(context.last_track_added.url))
 
 
+@step("there should be three tracks in the power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that(len(context.tracklist.tracks), is_(3))
