@@ -6,6 +6,9 @@ from power_hour_creator import power_hour_creator, config
 from PyQt5.QtTest import QTest
 
 
+def before_all(context):
+    config.PHC_ENV = 'test'
+
 def after_step(context, step):
     QTest.qWait(5)
 

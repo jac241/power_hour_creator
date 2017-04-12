@@ -244,9 +244,15 @@ class VideoProcessor(MediaProcessor):
         self._ensure_frame_rate_and_resolution_are_correct(media_file)
 
     def merge_files_into_power_hour(self, output_files, power_hour_path):
+        scale_string = 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
         filter_strings = []
+
         for index in range(len(output_files)):
-            filter_strings.append('[{}:v:0] [{}:a:0]'.format(index, index))
+            filter_strings.append('[{}:v]{}[v{}];'.format(index, scale_string, index))
+
+        for index in range(len(output_files)):
+            filter_strings.append('[v{}][{}:a:0]'.format(index, index))
+
         filter_complex = '{} concat=n={}:v=1:a=1 [v] [a]'.format(' '.join(filter_strings), len(output_files))
 
         input_directives = []
@@ -285,9 +291,9 @@ class VideoProcessor(MediaProcessor):
             self._shorten_to_one_minute(media_file)
             self._move_file_back_to_download_path(media_file)
 
-        if not self._frame_rate_and_resolution_are_correct(media_file):
-            self._convert_video_to_correct_attributes(media_file)
-            self._move_file_back_to_download_path(media_file)
+        # if not self._frame_rate_and_resolution_are_correct(media_file):
+        #     self._convert_video_to_correct_attributes(media_file)
+        #     self._move_file_back_to_download_path(media_file)
 
         self._move_file_to_output_path(media_file)
 

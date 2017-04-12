@@ -1,8 +1,12 @@
 import logging
 import os
 import sys
+from glob import glob
+
+from PyQt5.QtWidgets import QMessageBox
 
 from power_hour_creator import config
+from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 
 def ensure_log_folder_exists():
@@ -15,7 +19,9 @@ def setup_logging():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
-                        filename=os.path.join(config.APP_DIRS.user_log_dir, "power_hour_creator.log"),
+                        filename=os.path.join(
+                            config.APP_DIRS.user_log_dir,
+                            '{}.log'.format(config.PHC_ENV)),
                         filemode='a')
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler(stream=sys.stdout)
@@ -28,6 +34,123 @@ def setup_logging():
     logging.getLogger('').addHandler(console)
 
 
+def ensure_db_exists():
+    logger = logging.getLogger(__name__)
+    logger.info('Connecting to DB: {}'.format(config.DB_PATH))
+    db = QSqlDatabase.addDatabase('QSQLITE')
+    db.setDatabaseName(config.DB_PATH)
+
+    if not db.open():
+        QMessageBox.critical(
+            None,
+            'Cannot open database',
+            'Unable to open database\n\nClick Cancel to exit',
+            QMessageBox.Cancel
+        )
+
+
+class MigrationError(Exception):
+    pass
+
+
+def ensure_migrations_table_exists():
+    query = QSqlQuery()
+    # noinspection SqlNoDataSourceInspection
+    result = query.exec_("""
+        CREATE TABLE IF NOT EXISTS migrations (
+            level INTEGER PRIMARY KEY
+        );
+    """)
+
+
+def fail_migration(query, migration):
+    QSqlDatabase.database().rollback()
+    QMessageBox.critical(
+        None,
+        'Migration failed',
+        (
+            'Migration {} failed with error {}'
+            '\n\nClick Cancel to exit'
+        ).format(migration.path, query.lastError().databaseText()),
+        QMessageBox.Cancel
+    )
+    raise MigrationError
+
+
+def update_schema_migrations_level(migration):
+    query = QSqlQuery()
+    query.prepare("INSERT INTO migrations (level) VALUES (:level)")
+    query.bindValue(':level', migration.level)
+    if not query.exec_():
+        fail_migration(query, migration.path)
+
+
+def get_migration_level():
+    query = QSqlQuery()
+    query.exec_("SELECT MAX(level) FROM migrations")
+
+    level = None
+    while query.next():
+        level = query.value(0)
+
+    return level or 0
+
+
+class Migration:
+    def __init__(self, path):
+        self.path = path
+
+    @property
+    def level(self):
+        filename = os.path.basename(self.path)
+        return int(os.path.splitext(filename)[0])
+
+    def already_performed(self, other_level):
+        return self.level <= other_level
+
+
+def log_attempting_migration(migration):
+    logger = logging.getLogger(__name__)
+    logger.info('Migrating DB to level {}'.format(migration.level))
+
+
+def log_successful_migration(migration):
+    logger = logging.getLogger(__name__)
+    logger.info('Successfully migrated DB to level {}'.format(migration.level))
+
+
+def migrate_database():
+    initial_migration_level = get_migration_level()
+    migration_paths = glob(os.path.join(config.MIGRATIONS_PATH, '*.sql'))
+
+    for migration in map(lambda p: Migration(p), sorted(migration_paths)):
+
+        if migration.already_performed(initial_migration_level):
+            break
+
+        with open(migration.path, 'r') as f:
+            QSqlDatabase.database().transaction()
+
+            log_attempting_migration(migration)
+
+            for statement in f.read().split(';'):
+                query = QSqlQuery()
+                if not query.exec_(statement):
+                    fail_migration(query, migration)
+
+            update_schema_migrations_level(migration)
+            QSqlDatabase.database().commit()
+
+            log_successful_migration(migration)
+
+
+def setup_database():
+    ensure_db_exists()
+    ensure_migrations_table_exists()
+    migrate_database()
+
+
 def bootstrap_app():
     setup_logging()
+    setup_database()
 
