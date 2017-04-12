@@ -209,16 +209,7 @@ def step_impl(context, direction, pos):
     """
     :type context: behave.runner.Context
     """
-    viewport = context.main_window.tracklist.viewport()
-    url_cell_pos = tracklist_cell_pos(context, row=int(pos), column=Tracklist.Columns.url)
-
-    QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
-    # Right click doesn't work for some reason...
-    # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
-
-    context.tracklist._build_custom_menu(url_cell_pos)
-
-    menu = QApplication.activePopupWidget()
+    menu = open_context_menu_at(context, row=int(pos), column=Tracklist.Columns.url)
 
     QTest.keyClick(menu, Qt.Key_Down)
     if direction == 'below':
@@ -245,9 +236,36 @@ def step_impl(context):
     assert_that(first_track.url, is_(context.last_track_added.url))
 
 
-@step("there should be three tracks in the power hour")
-def step_impl(context):
+@step("there should be {num_tracks} tracks in the power hour")
+def step_impl(context, num_tracks):
     """
     :type context: behave.runner.Context
     """
-    assert_that(len(context.tracklist.tracks), is_(3))
+    assert_that(len(context.tracklist.tracks), is_(int(num_tracks)))
+
+
+def open_context_menu_at(context, row, column):
+    viewport = context.main_window.tracklist.viewport()
+    url_cell_pos = tracklist_cell_pos(context, row=row, column=column)
+
+    QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
+    # Right click doesn't work for some reason...
+    # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
+
+    context.tracklist._build_custom_menu(url_cell_pos)
+
+    return QApplication.activePopupWidget()
+
+
+@step("I choose to delete the tracks at row {pos}")
+def step_impl(context, pos):
+    """
+    :type context: behave.runner.Context
+    """
+    viewport = context.tracklist.viewport()
+
+    menu = open_context_menu_at(context, row=int(pos), column=Tracklist.Columns.title)
+    for _ in range(3):
+        QTest.keyClick(menu, Qt.Key_Down)
+    QTest.keyClick(menu, Qt.Key_Enter)
+    QTest.qWait(1000)

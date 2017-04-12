@@ -37,4 +37,9 @@ Feature: Create power hour
     And I choose to insert a row below row 1 with the context menu
     And I add a track to the power hour at row 2
     Then the row count should have increased
-    And there should be three tracks in the power hour
+    And there should be 3 tracks in the power hour
+
+  Scenario: I should be able to delete rows from the context menu
+    When I add 3 tracks to a power hour
+    And I choose to delete the tracks at row 2
+    Then there should be 2 tracks in the power hour

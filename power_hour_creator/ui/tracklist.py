@@ -233,7 +233,7 @@ class Tracklist(QTableWidget):
         try:
             self._show_track_details(row, find_track(url))
         except ValueError:
-            pass
+            self._clear_row(row)
         except DownloadError:
             self.error_downloading.emit(url)
             self._clear_out_invalid_url(row)
@@ -242,6 +242,11 @@ class Tracklist(QTableWidget):
         self.setItem(row, self.Columns.title, QTableWidgetItem(track.title))
         self.setItem(row, self.Columns.track_length, QTableWidgetItem(str(track.length)))
         self.setItem(row, self.Columns.start_time, QTableWidgetItem(str(track.start_time)))
+
+    def _clear_row(self, row):
+        self.setItem(row, self.Columns.title, QTableWidgetItem(''))
+        self.setItem(row, self.Columns.track_length, QTableWidgetItem(''))
+        self.setItem(row, self.Columns.start_time, QTableWidgetItem(''))
 
     def _clear_out_invalid_url(self, row):
         self.setItem(row, self.Columns.url, QTableWidgetItem(""))
@@ -263,6 +268,10 @@ class Tracklist(QTableWidget):
         insert_below.triggered.connect(self._insert_row_below)
         menu.addAction(insert_below)
 
+        delete_selected = QAction('Delete Selected Tracks', self)
+        delete_selected.triggered.connect(self._delete_selected_tracks)
+        menu.addAction(delete_selected)
+
         menu.popup(self.viewport().mapToGlobal(position))
 
     def _insert_row_above(self):
@@ -272,3 +281,7 @@ class Tracklist(QTableWidget):
     def _insert_row_below(self):
         last_selected_row = self.selectedIndexes()[-1].row()
         self.insertRow(last_selected_row + 1)
+
+    def _delete_selected_tracks(self):
+        for index in reversed(sorted(self.selectionModel().selectedRows())):
+            self.removeRow(index.row())
