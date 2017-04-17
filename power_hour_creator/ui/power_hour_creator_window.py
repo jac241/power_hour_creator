@@ -22,6 +22,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._connect_track_errors()
         self._enable_create_power_hour_button_when_tracks_present()
         self._connect_help_menu()
+        self._connect_file_menu()
 
     def _setup_grid_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -90,6 +91,12 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         def show_logs():
             os.startfile(config.APP_DIRS.user_log_dir, 'explore')
         self.actionShow_logs.triggered.connect(show_logs)
+
+    def _connect_file_menu(self):
+        def new_power_hour():
+            self.powerHoursListView.add_power_hour()
+
+        self.actionNew_Power_Hour.triggered.connect(new_power_hour)
 
 
 class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):

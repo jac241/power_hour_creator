@@ -269,3 +269,13 @@ def step_impl(context, pos):
         QTest.keyClick(menu, Qt.Key_Down)
     QTest.keyClick(menu, Qt.Key_Enter)
     QTest.qWait(1000)
+
+
+@when("I create a new power hour from the file menu")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    QTest.qWaitForWindowActive(context.main_window)
+    QTest.keyPress(context.main_window, Qt.Key_N, Qt.ControlModifier)
+    QTest.qWait(500)

@@ -1,19 +1,19 @@
 import os
 import glob
 
+from PyQt5.QtSql import QSqlQuery
+
 import power_hour_creator.config
-from power_hour_creator import power_hour_creator, config
+from power_hour_creator import power_hour_creator, config, boot
 from PyQt5.QtTest import QTest
 
-
-def before_all(context):
-    config.PHC_ENV = 'test'
 
 def after_step(context, step):
     QTest.qWait(5)
 
 
 def before_scenario(context, scenario):
+    config.phc_env = 'test'
     launch_app(context)
     context.support_path = os.path.join(config.ROOT_DIR, "../tests/support")
     context.num_tracks = 0
@@ -23,6 +23,7 @@ def before_scenario(context, scenario):
 def after_scenario(context, scenario):
     close_app(context)
     delete_export_files(context)
+    clean_database()
 
 
 def launch_app(context):
@@ -41,3 +42,14 @@ def delete_export_files(context):
         export_files = glob.glob(os.path.join(context.support_path, "exports/*.{}".format(ext)))
         for f in export_files:
             os.remove(f)
+
+
+def clean_database():
+    try:
+        db = boot.connect_to_db()
+        query = QSqlQuery()
+        query.exec_("DELETE FROM migrations")
+        query.exec_("DELETE FROM power_hours")
+        query.exec_("DELETE FROM tracks")
+    finally:
+        db.close()

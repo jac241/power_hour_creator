@@ -43,3 +43,8 @@ Feature: Create power hour
     When I add 3 tracks to a power hour
     And I choose to delete the tracks at row 2
     Then there should be 2 tracks in the power hour
+
+  Scenario: Creating a new power hour from the file menu
+    When I create a new power hour from the file menu
+    And I change that power hour's name
+    Then I should see the power hour in the list of power hours
