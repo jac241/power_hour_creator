@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\designer\mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.7.1
+# Created by: PyQt5 UI code generator 5.8.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -182,15 +182,9 @@ class Ui_mainWindow(object):
         self.tracksLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.tracksLayout.setContentsMargins(0, 0, 0, 0)
         self.tracksLayout.setObjectName("tracksLayout")
-        self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.horizontalLayout.setObjectName("horizontalLayout")
         self.powerHourNameLabel = QtWidgets.QLabel(self.verticalLayoutWidget_2)
         self.powerHourNameLabel.setObjectName("powerHourNameLabel")
-        self.horizontalLayout.addWidget(self.powerHourNameLabel)
-        self.powerHourNameLineEdit = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
-        self.powerHourNameLineEdit.setObjectName("powerHourNameLineEdit")
-        self.horizontalLayout.addWidget(self.powerHourNameLineEdit)
-        self.tracksLayout.addLayout(self.horizontalLayout)
+        self.tracksLayout.addWidget(self.powerHourNameLabel)
         self.tracklist = Tracklist(self.verticalLayoutWidget_2)
         self.tracklist.setMinimumSize(QtCore.QSize(0, 0))
         self.tracklist.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -252,7 +246,6 @@ class Ui_mainWindow(object):
         self.menuHelp.addAction(self.actionShow_logs)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
-        self.powerHourNameLabel.setBuddy(self.powerHourNameLineEdit)
 
         self.retranslateUi(mainWindow)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)

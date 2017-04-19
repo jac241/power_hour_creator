@@ -276,6 +276,17 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    QTest.qWaitForWindowActive(context.main_window)
     QTest.keyPress(context.main_window, Qt.Key_N, Qt.ControlModifier)
     QTest.qWait(500)
+
+
+@step("I change that power hour's name")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    ph_list_view = context.main_window.powerHoursListView
+    viewport = ph_list_view.viewport()
+    QTest.qWait(1000)
+    ph_list_view.edit(ph_list_view.model().index(0,0))
+    QTest.qWait(2000)

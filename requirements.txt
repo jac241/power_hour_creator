@@ -9,3 +9,4 @@ pypiwin32
 behave
 QDarkStyle
 pyhamcrest
+delegator.py

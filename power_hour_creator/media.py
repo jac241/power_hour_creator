@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import logging
 import shutil
 import json
+import delegator
 
 from youtube_dl import YoutubeDL
 from youtube_dl.YoutubeDL import DownloadError
@@ -208,10 +209,12 @@ class AudioProcessor(MediaProcessor):
             '-safe', '0',
             '-i', concat_directive_path,
             '-c', 'copy',
+            '-nostdin',
             power_hour_path
         ]
+        pass
         self._logger.info('Merging into power hour with command: {}'.format(" ".join(cmd)))
-        subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        p = delegator.run(cmd)
 
     def _shorten_to_one_minute(self, media_file):
         cmd = [
@@ -223,6 +226,7 @@ class AudioProcessor(MediaProcessor):
             '-acodec', 'copy',
             '-ar', '44100',
             '-b:a', '192k',
+            '-nostdin',
             media_file.output_path
         ]
 
@@ -244,7 +248,7 @@ class VideoProcessor(MediaProcessor):
         self._ensure_frame_rate_and_resolution_are_correct(media_file)
 
     def merge_files_into_power_hour(self, output_files, power_hour_path):
-        scale_string = 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
+        scale_string = 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1'
         filter_strings = []
 
         for index in range(len(output_files)):

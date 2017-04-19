@@ -18,6 +18,7 @@ def before_scenario(context, scenario):
     context.support_path = os.path.join(config.ROOT_DIR, "../tests/support")
     context.num_tracks = 0
     context.prhr_length = 0
+    QTest.qWaitForWindowActive(context.main_window)
 
 
 def after_scenario(context, scenario):

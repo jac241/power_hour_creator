@@ -67,9 +67,10 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             thread.progress.connect(progress_dialog.overallProgressBar.setValue)
             thread.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
             thread.track_download_progress.connect(progress_dialog.show_track_download_progress)
+            thread.error.connect(self._show_worker_error)
             thread.finished.connect(progress_dialog.close)
             thread.finished.connect(self._show_finished_status)
-            thread.error.connect(self._show_worker_error)
+            thread.finished.connect(thread.deleteLater)
 
             progress_dialog.show()
             thread.start()
