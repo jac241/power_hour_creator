@@ -18,6 +18,7 @@ from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_c
 
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
+new_ph_name = "My Power Hour"
 
 
 @step("I create a power hour")
@@ -286,7 +287,24 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     ph_list_view = context.main_window.powerHoursListView
-    viewport = ph_list_view.viewport()
-    QTest.qWait(1000)
-    ph_list_view.edit(ph_list_view.model().index(0,0))
+
+    # Can't figure out how to click on a qlistview...
+    # ph_list_view.edit(ph_list_view.model().index(0,0))
+    #
+    # QTest.keyClicks(viewport.focusWidget(), new_ph_name)
+    # QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
+
+    model = ph_list_view.model()
+    index = model.index(0, 1)
+    model.setData(index, new_ph_name)
+    model.submitAll()
     QTest.qWait(2000)
+
+
+
+@then("I should see the new power hour name above the tracklist")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that(context.main_window.powerHourNameLabel.text(), is_(new_ph_name))

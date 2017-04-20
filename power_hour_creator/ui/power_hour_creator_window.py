@@ -23,6 +23,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._enable_create_power_hour_button_when_tracks_present()
         self._connect_help_menu()
         self._connect_file_menu()
+        self._connect_power_hour_list_view()
 
     def _setup_grid_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -98,6 +99,19 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             self.powerHoursListView.add_power_hour()
 
         self.actionNew_Power_Hour.triggered.connect(new_power_hour)
+
+    def _connect_power_hour_list_view(self):
+        def show_power_hour_name(new_index, _=None):
+            ph_name = new_index.data()
+            self.powerHourNameLabel.setText(ph_name)
+
+        def show_renamed_power_hour_name(top_left_index, bottom_right_index):
+            current_selection = self.powerHoursListView.selectionModel().selectedIndexes()
+            if top_left_index in current_selection:
+                show_power_hour_name(top_left_index)
+
+        self.powerHoursListView.selectionModel().currentRowChanged.connect(show_power_hour_name)
+        self.powerHoursListView.model().dataChanged.connect(show_renamed_power_hour_name)
 
 
 class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):

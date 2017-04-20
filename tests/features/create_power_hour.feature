@@ -47,4 +47,4 @@ Feature: Create power hour
   Scenario: Creating a new power hour from the file menu
     When I create a new power hour from the file menu
     And I change that power hour's name
-    Then I should see the power hour in the list of power hours
+    Then I should see the new power hour name above the tracklist
