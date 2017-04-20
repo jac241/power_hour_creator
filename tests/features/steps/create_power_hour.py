@@ -295,7 +295,7 @@ def step_impl(context):
     # QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
 
     model = ph_list_view.model()
-    index = model.index(0, 1)
+    index = model.index(1, 1)
     model.setData(index, new_ph_name)
     model.submitAll()
     QTest.qWait(2000)

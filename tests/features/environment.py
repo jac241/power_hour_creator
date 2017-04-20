@@ -7,6 +7,8 @@ import power_hour_creator.config
 from power_hour_creator import power_hour_creator, config, boot
 from PyQt5.QtTest import QTest
 
+def before_all(context):
+    clean_database()
 
 def after_step(context, step):
     QTest.qWait(5)
@@ -49,8 +51,8 @@ def clean_database():
     try:
         db = boot.connect_to_db()
         query = QSqlQuery()
-        query.exec_("DELETE FROM migrations")
-        query.exec_("DELETE FROM power_hours")
         query.exec_("DELETE FROM tracks")
+        query.exec_("DELETE FROM power_hours")
+        query.exec_("DELETE FROM migrations")
     finally:
         db.close()
