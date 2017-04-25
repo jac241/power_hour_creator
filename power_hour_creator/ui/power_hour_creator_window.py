@@ -1,14 +1,15 @@
 import os
 
 from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, \
     QMessageBox
 
 from power_hour_creator import config
 from power_hour_creator.media import CreatePowerHourService, PowerHour
+from power_hour_creator.resources import image_path
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
-
 
 class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
@@ -24,6 +25,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._connect_help_menu()
         self._connect_file_menu()
         self._connect_power_hour_list_view()
+        self.setWindowIcon(QIcon(image_path('Beer-80.png')))
 
     def _setup_grid_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)

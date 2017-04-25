@@ -1,27 +1,17 @@
+import json
+import logging
 import os
+import shutil
 import subprocess
-import sys
 from collections import namedtuple
 from tempfile import TemporaryDirectory
-import logging
-import shutil
-import json
-import delegator
-
-from youtube_dl import YoutubeDL
-from youtube_dl.YoutubeDL import DownloadError
 
 import attr
+import delegator
+from youtube_dl import YoutubeDL, DownloadError
 
 from power_hour_creator.config import EXT_DIR
-
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-
-    return os.path.join(os.path.abspath("."), relative_path)
+from power_hour_creator.resources import resource_path
 
 
 def ffmpeg_dir():
