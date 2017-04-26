@@ -255,7 +255,7 @@ class TracklistModel(QSqlTableModel):
         for pos in range(DEFAULT_NUM_TRACKS):
             if not self.insertRow(pos):
                 self.database().rollback()
-                raise RuntimeError("Unable to create tracks for power hour")
+                raise DbError("Unable to create tracks for power hour")
 
         self.database().commit()
         self.endInsertRows()
@@ -283,7 +283,7 @@ class TracklistModel(QSqlTableModel):
         self.current_power_hour_id = power_hour_id
         self.power_hour_changed.emit()
 
-    def insert_row_above(self, row):
+    def insert_row_accounting_for_existing_tracks(self, row):
         self.beginInsertRows(QModelIndex(), row, row)
         self.database().transaction()
 
@@ -395,11 +395,11 @@ class Tracklist(QTableView):
 
     def _insert_row_above(self):
         selected_row = self.selectedIndexes()[0].row()
-        self.model().insert_row_above(selected_row)
+        self.model().insert_row_accounting_for_existing_tracks(selected_row)
 
     def _insert_row_below(self):
         last_selected_row = self.selectedIndexes()[-1].row()
-        self.insertRow(last_selected_row + 1)
+        self.model().insert_row_accounting_for_existing_tracks(last_selected_row + 1)
 
     def _delete_selected_tracks(self):
         for index in reversed(sorted(self.selectionModel().selectedRows())):

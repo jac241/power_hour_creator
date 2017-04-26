@@ -243,7 +243,7 @@ def step_impl(context, num_tracks):
     """
     :type context: behave.runner.Context
     """
-    assert_that(len(context.tracklist.tracks), is_(int(num_tracks)))
+    assert_that(len(context.main_window.tracklist_model.tracks), is_(int(num_tracks)))
 
 
 def open_context_menu_at(context, row, column):
