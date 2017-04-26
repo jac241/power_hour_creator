@@ -253,14 +253,12 @@ class TracklistModel(QSqlTableModel):
         self.database().transaction()
 
         for pos in range(DEFAULT_NUM_TRACKS):
-            if not self.insertRow(pos):
-                self.database().rollback()
-                raise DbError("Unable to create tracks for power hour")
+            self._rollback_and_error_if_unsuccessful(self.insertRow(pos))
 
         self.database().commit()
         self.endInsertRows()
 
-    def insertRow(self, position):
+    def insertRow(self, position, *args, **kwargs):
         query = QSqlQuery()
 
         query.prepare(
@@ -289,14 +287,12 @@ class TracklistModel(QSqlTableModel):
 
         self._increment_position_for_rows_from(row)
 
-        if not self.insertRow(row):
-            self.database().rollback()
-            raise DbError(self.database().lastError().databaseText())
+        self._rollback_and_error_if_unsuccessful(self.insertRow(row))
 
         self.database().commit()
         self.endInsertRows()
 
-        self.sort(self.Columns.position, Qt.AscendingOrder)
+        self._sort_by_position()
 
     def _increment_position_for_rows_from(self, row):
         # need to use a weird query here http://stackoverflow.com/questions/7703196/sqlite-increment-unique-integer-field
@@ -305,16 +301,49 @@ class TracklistModel(QSqlTableModel):
         query.prepare('UPDATE tracks SET position = -(position+1) WHERE position >= :pos')
         query.bindValue(':pos', row)
 
-        self._rollback_and_error_if_unsuccessful(query)
+        self._rollback_and_error_if_unsuccessful(query.exec_())
 
         query.prepare('UPDATE tracks SET position = -position WHERE position < 0')
 
-        self._rollback_and_error_if_unsuccessful(query)
+        self._rollback_and_error_if_unsuccessful(query.exec_())
 
-    def _rollback_and_error_if_unsuccessful(self, query):
-        if not query.exec_():
-            self.database().rollback()
-            raise DbError(query.lastError().databaseText())
+    def _rollback_and_error_if_unsuccessful(self, successful):
+        if not successful:
+            self._handle_database_error()
+
+    def _handle_database_error(self):
+        self.database().rollback()
+        raise DbError(self.database().lastError().databaseText())
+
+    def remove_track_accounting_for_existing_tracks(self, position):
+        self.beginRemoveRows(QModelIndex(), position, position)
+        self.database().transaction()
+
+        self._rollback_and_error_if_unsuccessful(self.removeRow(position))
+
+        self._decrement_position_for_tracks_from(position)
+
+        self.database().commit()
+        self.endRemoveRows()
+
+        self._sort_by_position()
+
+    def _sort_by_position(self):
+        self.sort(self.Columns.position, Qt.AscendingOrder)
+
+    def removeRow(self, position, *args, **kwargs):
+        query = QSqlQuery()
+
+        query.prepare('DELETE FROM tracks WHERE position = :position')
+        query.bindValue(":position", position)
+
+        return query.exec_()
+
+    def _decrement_position_for_tracks_from(self, position):
+        query = QSqlQuery()
+        query.prepare('UPDATE tracks SET position = position -1 WHERE position > :pos')
+        query.bindValue(':pos', position)
+        self._rollback_and_error_if_unsuccessful(query.exec_())
 
 
 class Tracklist(QTableView):
@@ -403,4 +432,4 @@ class Tracklist(QTableView):
 
     def _delete_selected_tracks(self):
         for index in reversed(sorted(self.selectionModel().selectedRows())):
-            self.removeRow(index.row())
+            self.model().remove_track_accounting_for_existing_tracks(index.row())
