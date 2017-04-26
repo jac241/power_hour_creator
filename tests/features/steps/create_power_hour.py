@@ -13,6 +13,7 @@ from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialo
 from power_hour_creator.ui.tracklist import DisplayTime, Tracklist, \
     DEFAULT_NUM_TRACKS
 from power_hour_creator.media import TRACK_LENGTH, MediaFile
+from tests.features.environment import close_app, launch_app
 
 from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_cell_pos
 
@@ -308,3 +309,32 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     assert_that(context.main_window.powerHourNameLabel.text(), is_(new_ph_name))
+
+
+@step("I reload the app")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    close_app(context)
+    launch_app(context)
+
+
+@step("I select the power hour I created")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    ph_list_view = context.main_window.powerHoursListView
+    ph_list_view.setCurrentIndex(ph_list_view.model().index(1, 1))
+    QTest.qWait(4000)
+
+
+@then("I should still see the tracks I added")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    tracks = context.main_window.tracklist_model.tracks
+    assert_that(len(tracks), is_(2))
+    assert_that(tracks[0].title, is_not(''))

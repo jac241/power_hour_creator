@@ -509,106 +509,6 @@
           <property name="showGrid">
            <bool>true</bool>
           </property>
-          <property name="rowCount">
-           <number>60</number>
-          </property>
-          <property name="columnCount">
-           <number>5</number>
-          </property>
-          <attribute name="horizontalHeaderVisible">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>100</number>
-          </attribute>
-          <attribute name="horizontalHeaderStretchLastSection">
-           <bool>false</bool>
-          </attribute>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <row/>
-          <column>
-           <property name="text">
-            <string>URL</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Title</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Length</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Start Time</string>
-           </property>
-          </column>
-          <column>
-           <property name="text">
-            <string>Full Song?</string>
-           </property>
-          </column>
          </widget>
         </item>
         <item>
@@ -699,14 +599,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Tracklist</class>
-   <extends>QTableWidget</extends>
-   <header>power_hour_creator.ui.tracklist</header>
-  </customwidget>
-  <customwidget>
    <class>PowerHourListView</class>
    <extends>QListView</extends>
    <header>power_hour_creator.ui.power_hour_list</header>
+  </customwidget>
+  <customwidget>
+   <class>Tracklist</class>
+   <extends>QTableView</extends>
+   <header>power_hour_creator.ui.tracklist</header>
   </customwidget>
  </customwidgets>
  <resources/>

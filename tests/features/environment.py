@@ -7,8 +7,10 @@ import power_hour_creator.config
 from power_hour_creator import power_hour_creator, config, boot
 from PyQt5.QtTest import QTest
 
+
 def before_all(context):
     clean_database()
+
 
 def after_step(context, step):
     QTest.qWait(5)

@@ -1,7 +1,9 @@
-from PyQt5.QtCore import QSortFilterProxyModel
+from PyQt5.QtCore import QSortFilterProxyModel, QModelIndex
 from PyQt5.QtGui import QBrush
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QApplication, QAbstractItemView, QMenu, QAction
+from PyQt5.QtSql import QSqlTableModel, QSqlQuery, QSqlDatabase
+from PyQt5.QtWidgets import QApplication, QAbstractItemView, QMenu, QAction, \
+    QTableView
 from PyQt5.QtWidgets import QCheckBox
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QHBoxLayout
@@ -72,10 +74,15 @@ class TrackDelegate(QItemDelegate):
         if self._column_is_time_column_and_has_data(index):
             seconds = index.model().data(index, Qt.DisplayRole)
             time = DisplayTime(seconds)
-            self.drawDisplay(painter, option, option.rect, time.as_time_str())
+            value = time.as_time_str() if self._row_has_a_track(index) else ''
+            self.drawDisplay(painter, option, option.rect, value)
             self.drawFocus(painter, option, option.rect)
-        elif self._column_is_a_boolean_column(index) and self._row_has_a_track(index):
-            value = 'Yes' if index.model().data(index, Qt.DisplayRole) else 'No'
+        elif self._column_is_a_boolean_column(index):
+            value = ''
+
+            if self._row_has_a_track(index):
+                value = 'Yes' if index.model().data(index, Qt.DisplayRole) else 'No'
+
             self.drawDisplay(painter, option, option.rect, value)
             self.drawFocus(painter, option, option.rect)
         else:
@@ -102,7 +109,7 @@ class TrackDelegate(QItemDelegate):
             time = DisplayTime(seconds)
             if type(editor) is QLineEdit:
                 editor.setText(time.as_time_str())
-        if index.column() in self._boolean_columns:
+        elif index.column() in self._boolean_columns:
             value = True if index.model().data(index, Qt.DisplayRole) else False
             index = editor.findData(value)
             editor.setCurrentIndex(index)
@@ -112,7 +119,7 @@ class TrackDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         if self._column_is_time_column_and_has_data(index):
             model.setData(index, DisplayTime(editor.text()).as_seconds())
-        if index.column() in self._boolean_columns:
+        elif index.column() in self._boolean_columns:
             value = True if editor.itemData(editor.currentIndex()) else False
             model.setData(index, value)
         else:
@@ -153,12 +160,132 @@ class TrackDelegate(QItemDelegate):
         self.closeEditor.emit(editor)
 
 
-class Tracklist(QTableWidget):
+class TracklistModel(QSqlTableModel):
+
+    power_hour_changed = pyqtSignal()
+
+    class Columns:
+        id = 0
+        position = 1
+        url = 2
+        title = 3
+        length = 4
+        start_time = 5
+        full_song = 6
+        power_hour_id = 7
+        read_only = [title, length]
+        time = [length, start_time]
+        checkbox = [full_song]
+
+    def __init__(self, parent=None, db=QSqlDatabase(), *args, **kwargs):
+        super().__init__(parent, db, *args, **kwargs)
+        self.dataChanged.connect(self._handle_data_change)
+
+    @property
+    def tracks(self):
+        model = self._tracks_query_model()
+
+        tracks = []
+        for record in map(lambda i: model.record(i), range(model.rowCount())):
+            tracks.append(Track.from_record(record))
+
+        return tracks
+
+    def has_tracks(self):
+        model = self._tracks_query_model()
+        model.select()
+        return model.rowCount()
+
+    def _tracks_query_model(self):
+        model = QSqlTableModel()
+        model.setTable(self.tableName())
+        filter = self.filter()
+        filter += " AND " if self.filter().strip() else ''
+        filter += "length(url) > 0"
+        model.setFilter(filter)
+        model.setSort(Tracklist.Columns.position, Qt.AscendingOrder)
+        model.select()
+        return model
+
+    def add_tracks_to_new_power_hour(self, power_hour_id):
+        self.beginInsertRows(QModelIndex(), 0, DEFAULT_NUM_TRACKS-1)
+        self.database().transaction()
+
+        query = QSqlQuery()
+        query.prepare("INSERT INTO tracks(position, url, title, length, start_time, full_song, power_hour_id) "
+                      "VALUES (:position, :url, :title, :length, :start_time, :full_song, :power_hour_id)")
+        for pos in range(DEFAULT_NUM_TRACKS):
+            query.bindValue(":position", pos)
+            query.bindValue(":url", "")
+            query.bindValue(":title", "")
+            query.bindValue(":length", 0)
+            query.bindValue(":start_time", 0)
+            query.bindValue(":full_song", 0)
+            query.bindValue(":power_hour_id", power_hour_id)
+            if not query.exec_():
+                self.database().rollback()
+
+        self.database().commit()
+        self.endInsertRows()
+
+    def show_tracks_for_power_hour(self, power_hour_id):
+        self.setFilter("power_hour_id = {}".format(power_hour_id))
+        self.power_hour_changed.emit()
+
+    def _handle_data_change(self, top_left_index, *_):
+        column = top_left_index.column()
+        row = top_left_index.row()
+        if column == self.Columns.url:
+            url = top_left_index.data()
+            self._update_row_with_video_info(url, row)
+
+    def _update_row_with_video_info(self, url, row):
+        try:
+            self._show_track_details(row, find_track(url))
+        except ValueError:
+            self._clear_row(row)
+        except DownloadError:
+            self.error_downloading.emit(url)
+            self._clear_out_invalid_url(row)
+
+    def _show_track_details(self, row, track):
+        self.submit()
+        self.setData(self.index(row, self.Columns.title), track.title)
+        self.setData(self.index(row, self.Columns.length), track.length)
+        self.setData(self.index(row, self.Columns.start_time), track.start_time)
+        self.submitAll()
+
+    def _clear_row(self, row):
+        self.submit()
+        self.setData(self.index(row, self.Columns.title), '')
+        self.setData(self.index(row, self.Columns.length), 0)
+        self.setData(self.index(row, self.Columns.start_time), 0)
+        self.setData(self.index(row, self.Columns.full_song), 0)
+        self.submitAll()
+
+    def _clear_out_invalid_url(self, row):
+        self.setData(self.index(row, self.Columns.url), '')
+
+
+class Tracklist(QTableView):
 
     invalid_url = pyqtSignal(str)
     error_downloading = pyqtSignal(str)
 
     class Columns:
+        id = 0
+        position = 1
+        url = 2
+        title = 3
+        length = 4
+        start_time = 5
+        full_song = 6
+        power_hour_id = 7
+        read_only = [title, length]
+        time = [length, start_time]
+        checkbox = [full_song]
+
+    class OldColumns:
         url = 0
         title = 1
         track_length = 2
@@ -171,7 +298,6 @@ class Tracklist(QTableWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self._setup_delegate()
-        self._setup_signals()
         self._setup_context_menu()
 
     def add_track(self):
@@ -220,36 +346,6 @@ class Tracklist(QTableWidget):
                 boolean_columns= self.Columns.checkbox
             )
         )
-
-    def _setup_signals(self):
-        self.cellChanged.connect(self._handle_cell_change)
-
-    def _handle_cell_change(self, row, column):
-        if column == self.Columns.url:
-            url = self.item(row, column).text()
-            self._update_row_with_video_info(url, row)
-
-    def _update_row_with_video_info(self, url, row):
-        try:
-            self._show_track_details(row, find_track(url))
-        except ValueError:
-            self._clear_row(row)
-        except DownloadError:
-            self.error_downloading.emit(url)
-            self._clear_out_invalid_url(row)
-
-    def _show_track_details(self, row, track):
-        self.setItem(row, self.Columns.title, QTableWidgetItem(track.title))
-        self.setItem(row, self.Columns.track_length, QTableWidgetItem(str(track.length)))
-        self.setItem(row, self.Columns.start_time, QTableWidgetItem(str(track.start_time)))
-
-    def _clear_row(self, row):
-        self.setItem(row, self.Columns.title, QTableWidgetItem(''))
-        self.setItem(row, self.Columns.track_length, QTableWidgetItem(''))
-        self.setItem(row, self.Columns.start_time, QTableWidgetItem(''))
-
-    def _clear_out_invalid_url(self, row):
-        self.setItem(row, self.Columns.url, QTableWidgetItem(""))
 
     def _last_row_index(self):
         return self.rowCount() - 1

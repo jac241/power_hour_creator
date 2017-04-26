@@ -1,13 +1,16 @@
 import os
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
+from PyQt5.QtSql import QSqlTableModel
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, \
     QMessageBox
 
 from power_hour_creator import config
 from power_hour_creator.media import CreatePowerHourService, PowerHour
 from power_hour_creator.resources import image_path
+from power_hour_creator.ui.power_hour_list import PowerHourModel
+from power_hour_creator.ui.tracklist import TracklistModel
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
 
@@ -17,7 +20,8 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         super().__init__()
         self.setupUi(self)
 
-        self._setup_grid_appearance()
+        self._setup_power_hour_list_view()
+        self._setup_tracklist()
         self._connect_add_track_button()
         self._connect_create_power_hour_button()
         self._connect_track_errors()
@@ -27,8 +31,41 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._connect_power_hour_list_view()
         self.setWindowIcon(QIcon(image_path('Beer-80.png')))
 
-    def _setup_grid_appearance(self):
-        self.tracklist.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    def _setup_tracklist(self):
+        self._setup_tracklist_model()
+        self._setup_tracklist_appearance()
+
+    def _setup_power_hour_list_view(self):
+        self.power_hour_model = PowerHourModel(self)
+        self.power_hour_model.setTable('power_hours')
+        self.power_hour_model.setEditStrategy(QSqlTableModel.OnFieldChange)
+        self.power_hour_model.select()
+
+        self.powerHoursListView.setModel(self.power_hour_model)
+        self.powerHoursListView.setModelColumn(1)
+
+        self.power_hour_model.rowsInserted.connect(self.powerHoursListView.select_new_power_hour)
+
+    def _setup_tracklist_appearance(self):
+        self.tracklist.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
+
+    def _setup_tracklist_model(self):
+        self.tracklist_model = TracklistModel(self)
+        self.tracklist_model.setTable("tracks")
+        self.tracklist_model.setEditStrategy(QSqlTableModel.OnFieldChange)
+        self.tracklist_model.select()
+
+        self.tracklist_model.setHeaderData(self.tracklist.Columns.url, Qt.Horizontal, "URL")
+        self.tracklist_model.setHeaderData(self.tracklist.Columns.title, Qt.Horizontal, "Title")
+        self.tracklist_model.setHeaderData(self.tracklist.Columns.length, Qt.Horizontal, "Duration")
+        self.tracklist_model.setHeaderData(self.tracklist.Columns.start_time, Qt.Horizontal, "Start Time")
+        self.tracklist_model.setHeaderData(self.tracklist.Columns.full_song, Qt.Horizontal, "Full Song?")
+
+        self.tracklist.setModel(self.tracklist_model)
+        self.tracklist.hideColumn(0)  # id
+        self.tracklist.hideColumn(1)  # position
+        self.tracklist.hideColumn(7)  # power_hour_id
 
     def _connect_add_track_button(self):
         self.addTrackButton.clicked.connect(self.tracklist.add_track)
@@ -41,11 +78,12 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.tracklist.error_downloading.connect(self._show_error_downloading)
 
     def _enable_create_power_hour_button_when_tracks_present(self):
-        self.tracklist.itemChanged.connect(self._try_to_enable_create_button_on_tracklist_change)
+        self.tracklist_model.power_hour_changed.connect(self._try_to_enable_create_button_on_tracklist_change)
+        self.tracklist_model.dataChanged.connect(self._try_to_enable_create_button_on_tracklist_change)
+        self._try_to_enable_create_button_on_tracklist_change()
 
     def _try_to_enable_create_button_on_tracklist_change(self):
-        tracks_present = len(self.tracklist.tracks) > 0
-        self.createPowerHourButton.setEnabled(tracks_present)
+        self.createPowerHourButton.setEnabled(self.tracklist_model.has_tracks())
 
     def _show_invalid_url(self, url):
         self.statusBar.showMessage('URL "{}" is invalid'.format(url))
@@ -63,7 +101,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         is_video = self.videoCheckBox.checkState()
         power_hour_path = self.get_power_hour_path(is_video=is_video)
         if power_hour_path:
-            power_hour = PowerHour(self.tracklist.tracks, power_hour_path, is_video)
+            power_hour = PowerHour(self.tracklist_model.tracks, power_hour_path, is_video)
             thread = PowerHourExportThread(self, power_hour)
             progress_dialog = ExportPowerHourDialog(self, power_hour)
 
@@ -98,7 +136,9 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
     def _connect_file_menu(self):
         def new_power_hour():
-            self.powerHoursListView.add_power_hour()
+            power_hour_id = self.power_hour_model.add_power_hour()
+            self.tracklist_model.add_tracks_to_new_power_hour(power_hour_id)
+            self.tracklist_model.show_tracks_for_power_hour(power_hour_id)
 
         self.actionNew_Power_Hour.triggered.connect(new_power_hour)
 
@@ -107,12 +147,17 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             ph_name = new_index.data()
             self.powerHourNameLabel.setText(ph_name)
 
-        def show_renamed_power_hour_name(top_left_index, bottom_right_index):
+        def show_renamed_power_hour_name(top_left_index, _):
             current_selection = self.powerHoursListView.selectionModel().selectedIndexes()
             if top_left_index in current_selection:
                 show_power_hour_name(top_left_index)
 
+        def show_this_power_hours_tracks(new_index, _):
+            ph_id = new_index.sibling(new_index.row(), 0).data()
+            self.tracklist_model.show_tracks_for_power_hour(ph_id)
+
         self.powerHoursListView.selectionModel().currentRowChanged.connect(show_power_hour_name)
+        self.powerHoursListView.selectionModel().currentRowChanged.connect(show_this_power_hours_tracks)
         self.powerHoursListView.model().dataChanged.connect(show_renamed_power_hour_name)
 
 

@@ -363,6 +363,16 @@ class Track:
         length = result['duration'] if 'duration' in result else ''
         return cls(url=url, title=title, length=length)
 
+    @classmethod
+    def from_record(cls, record):
+        return cls(
+            url=record.value("url"),
+            title=record.value("title"),
+            length=record.value("length"),
+            full_song=record.value("full_song"),
+            start_time=record.value("start_time")
+        )
+
 
 class FindMediaDescriptionService:
     def __init__(self, url, downloader):
