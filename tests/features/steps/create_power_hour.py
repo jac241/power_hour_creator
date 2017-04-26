@@ -225,7 +225,7 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    assert_that(context.main_window.tracklist.rowCount(),
+    assert_that(context.main_window.tracklist_model.rowCount(),
                 greater_than(DEFAULT_NUM_TRACKS))
 
 
@@ -234,7 +234,7 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    first_track = context.tracklist.tracks[0]
+    first_track = context.main_window.tracklist_model.tracks[0]
     assert_that(first_track.url, is_(context.last_track_added.url))
 
 

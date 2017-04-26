@@ -160,6 +160,10 @@ class TrackDelegate(QItemDelegate):
         self.closeEditor.emit(editor)
 
 
+class DbError(IOError):
+    pass
+
+
 class TracklistModel(QSqlTableModel):
 
     power_hour_changed = pyqtSignal()
@@ -179,58 +183,10 @@ class TracklistModel(QSqlTableModel):
 
     def __init__(self, parent=None, db=QSqlDatabase(), *args, **kwargs):
         super().__init__(parent, db, *args, **kwargs)
+        self.current_power_hour_id = None
+
+        self.setSort(self.Columns.position, Qt.AscendingOrder)
         self.dataChanged.connect(self._handle_data_change)
-
-    @property
-    def tracks(self):
-        model = self._tracks_query_model()
-
-        tracks = []
-        for record in map(lambda i: model.record(i), range(model.rowCount())):
-            tracks.append(Track.from_record(record))
-
-        return tracks
-
-    def has_tracks(self):
-        model = self._tracks_query_model()
-        model.select()
-        return model.rowCount()
-
-    def _tracks_query_model(self):
-        model = QSqlTableModel()
-        model.setTable(self.tableName())
-        filter = self.filter()
-        filter += " AND " if self.filter().strip() else ''
-        filter += "length(url) > 0"
-        model.setFilter(filter)
-        model.setSort(Tracklist.Columns.position, Qt.AscendingOrder)
-        model.select()
-        return model
-
-    def add_tracks_to_new_power_hour(self, power_hour_id):
-        self.beginInsertRows(QModelIndex(), 0, DEFAULT_NUM_TRACKS-1)
-        self.database().transaction()
-
-        query = QSqlQuery()
-        query.prepare("INSERT INTO tracks(position, url, title, length, start_time, full_song, power_hour_id) "
-                      "VALUES (:position, :url, :title, :length, :start_time, :full_song, :power_hour_id)")
-        for pos in range(DEFAULT_NUM_TRACKS):
-            query.bindValue(":position", pos)
-            query.bindValue(":url", "")
-            query.bindValue(":title", "")
-            query.bindValue(":length", 0)
-            query.bindValue(":start_time", 0)
-            query.bindValue(":full_song", 0)
-            query.bindValue(":power_hour_id", power_hour_id)
-            if not query.exec_():
-                self.database().rollback()
-
-        self.database().commit()
-        self.endInsertRows()
-
-    def show_tracks_for_power_hour(self, power_hour_id):
-        self.setFilter("power_hour_id = {}".format(power_hour_id))
-        self.power_hour_changed.emit()
 
     def _handle_data_change(self, top_left_index, *_):
         column = top_left_index.column()
@@ -265,6 +221,100 @@ class TracklistModel(QSqlTableModel):
 
     def _clear_out_invalid_url(self, row):
         self.setData(self.index(row, self.Columns.url), '')
+
+    @property
+    def tracks(self):
+        model = self._tracks_query_model()
+
+        tracks = []
+        for record in map(lambda i: model.record(i), range(model.rowCount())):
+            tracks.append(Track.from_record(record))
+
+        return tracks
+
+    def has_tracks(self):
+        model = self._tracks_query_model()
+        return model.rowCount()
+
+    def _tracks_query_model(self):
+        model = QSqlTableModel()
+        model.setTable(self.tableName())
+        q_filter = self.filter()
+        q_filter += " AND " if self.filter().strip() else ''
+        q_filter += "length(url) > 0"
+        model.setFilter(q_filter)
+        model.setSort(Tracklist.Columns.position, Qt.AscendingOrder)
+        model.select()
+        return model
+
+    def add_tracks_to_new_power_hour(self, power_hour_id):
+        self.beginInsertRows(QModelIndex(), 0, DEFAULT_NUM_TRACKS-1)
+        self.current_power_hour_id = power_hour_id
+        self.database().transaction()
+
+        for pos in range(DEFAULT_NUM_TRACKS):
+            if not self.insertRow(pos):
+                self.database().rollback()
+                raise RuntimeError("Unable to create tracks for power hour")
+
+        self.database().commit()
+        self.endInsertRows()
+
+    def insertRow(self, position):
+        query = QSqlQuery()
+
+        query.prepare(
+            "INSERT INTO tracks(position, url, title, length, start_time, full_song, power_hour_id) "
+            "VALUES (:position, :url, :title, :length, :start_time, :full_song, :power_hour_id)"
+        )
+
+        query.bindValue(":position", position)
+        query.bindValue(":url", "")
+        query.bindValue(":title", "")
+        query.bindValue(":length", 0)
+        query.bindValue(":start_time", 0)
+        query.bindValue(":full_song", 0)
+        query.bindValue(":power_hour_id", self.current_power_hour_id)
+
+        return query.exec_()
+
+    def show_tracks_for_power_hour(self, power_hour_id):
+        self.setFilter("power_hour_id = {}".format(power_hour_id))
+        self.current_power_hour_id = power_hour_id
+        self.power_hour_changed.emit()
+
+    def insert_row_above(self, row):
+        self.beginInsertRows(QModelIndex(), row, row)
+        self.database().transaction()
+
+        self._increment_position_for_rows_from(row)
+
+        if not self.insertRow(row):
+            self.database().rollback()
+            raise DbError(self.database().lastError().databaseText())
+
+        self.database().commit()
+        self.endInsertRows()
+
+        self.sort(self.Columns.position, Qt.AscendingOrder)
+
+    def _increment_position_for_rows_from(self, row):
+        # need to use a weird query here http://stackoverflow.com/questions/7703196/sqlite-increment-unique-integer-field
+
+        query = QSqlQuery()
+        query.prepare('UPDATE tracks SET position = -(position+1) WHERE position >= :pos')
+        query.bindValue(':pos', row)
+
+        self._rollback_and_error_if_unsuccessful(query)
+
+        query.prepare('UPDATE tracks SET position = -position WHERE position < 0')
+
+        self._rollback_and_error_if_unsuccessful(query)
+
+    def _rollback_and_error_if_unsuccessful(self, query):
+        if not query.exec_():
+            self.database().rollback()
+            raise DbError(query.lastError().databaseText())
 
 
 class Tracklist(QTableView):
@@ -302,33 +352,6 @@ class Tracklist(QTableView):
 
     def add_track(self):
         self.insertRow(self.rowCount())
-
-    @property
-    def tracks(self):
-        tracks = []
-        for row in range(self.rowCount()):
-            url_item = self.item(row, self.Columns.url)
-            start_time_item = self.item(row, self.Columns.start_time)
-            title_item = self.item(row, self.Columns.title)
-            length_item = self.item(row, self.Columns.track_length)
-            full_song_item = self.item(row, self.Columns.full_song)
-            if self._items_have_text([url_item, start_time_item]):
-                url = url_item.text().strip()
-                start_time = start_time_item.text()
-                full_song = full_song_item.text() if full_song_item else False
-                title = title_item.text() if title_item else ""
-                length = length_item.text() if length_item else 0
-                if url and start_time:
-                    track = Track(
-                        url=url,
-                        start_time=start_time,
-                        title=title,
-                        length=length,
-                    )
-                    track.full_song = True if full_song == 'true' else False
-                    tracks.append(track)
-
-        return tracks
 
     def _items_have_text(self, items):
         return all(i is not None and len(i.text()) > 0 for i in items)
@@ -372,7 +395,7 @@ class Tracklist(QTableView):
 
     def _insert_row_above(self):
         selected_row = self.selectedIndexes()[0].row()
-        self.insertRow(selected_row)
+        self.model().insert_row_above(selected_row)
 
     def _insert_row_below(self):
         last_selected_row = self.selectedIndexes()[-1].row()

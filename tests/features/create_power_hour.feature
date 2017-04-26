@@ -50,7 +50,8 @@ Feature: Create power hour
     Then I should see the new power hour name above the tracklist
 
   Scenario: Persisting a power hour so that it is still there on the next load
-    When I add 2 tracks to a power hour
+    When I create a new power hour from the file menu
+    And I add 2 tracks to a power hour
     And I reload the app
     And I select the power hour I created
     Then I should still see the tracks I added
