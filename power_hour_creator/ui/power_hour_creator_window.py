@@ -22,7 +22,6 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
         self._setup_power_hour_list_view()
         self._setup_tracklist()
-        self._connect_add_track_button()
         self._connect_create_power_hour_button()
         self._connect_track_errors()
         self._enable_create_power_hour_button_when_tracks_present()
@@ -66,9 +65,6 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.tracklist.hideColumn(0)  # id
         self.tracklist.hideColumn(1)  # position
         self.tracklist.hideColumn(7)  # power_hour_id
-
-    def _connect_add_track_button(self):
-        self.addTrackButton.clicked.connect(self.tracklist.add_track)
 
     def _connect_create_power_hour_button(self):
         self.createPowerHourButton.clicked.connect(self._export_power_hour)

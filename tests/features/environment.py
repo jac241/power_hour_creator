@@ -9,7 +9,8 @@ from PyQt5.QtTest import QTest
 
 
 def before_all(context):
-    clean_database()
+    config.phc_env = 'test'
+    delete_database()
 
 
 def after_step(context, step):
@@ -58,3 +59,10 @@ def clean_database():
         query.exec_("DELETE FROM migrations")
     finally:
         db.close()
+
+
+def delete_database():
+    if 'test' in config.db_path():
+        os.remove(config.db_path())
+
+

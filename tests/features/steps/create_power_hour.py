@@ -1,5 +1,7 @@
 import time
 
+from PyQt5.QtCore import QModelIndex
+from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QApplication
 from behave import *
 from PyQt5.QtTest import QTest
@@ -189,7 +191,6 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     viewport = context.main_window.tracklist.viewport()
-    QTest.qWait(1000)
     url_cell_pos = tracklist_cell_pos(context, row=1, column=Tracklist.Columns.url)
 
     # Right click doesn't work for some reason...
@@ -270,7 +271,6 @@ def step_impl(context, pos):
     for _ in range(3):
         QTest.keyClick(menu, Qt.Key_Down)
     QTest.keyClick(menu, Qt.Key_Enter)
-    QTest.qWait(1000)
 
 
 @when("I create a new power hour from the file menu")
@@ -279,7 +279,6 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     QTest.keyPress(context.main_window, Qt.Key_N, Qt.ControlModifier)
-    QTest.qWait(500)
 
 
 @step("I change that power hour's name")
@@ -299,7 +298,6 @@ def step_impl(context):
     index = model.index(1, 1)
     model.setData(index, new_ph_name)
     model.submitAll()
-    QTest.qWait(2000)
 
 
 
@@ -327,7 +325,6 @@ def step_impl(context):
     """
     ph_list_view = context.main_window.powerHoursListView
     ph_list_view.setCurrentIndex(ph_list_view.model().index(1, 1))
-    QTest.qWait(4000)
 
 
 @then("I should still see the tracks I added")
@@ -338,3 +335,36 @@ def step_impl(context):
     tracks = context.main_window.tracklist_model.tracks
     assert_that(len(tracks), is_(2))
     assert_that(tracks[0].title, is_not(''))
+
+
+@when("I remove all the tracks from a power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    tracklist_model = context.main_window.tracklist_model
+    tracklist_model.beginRemoveRows(QModelIndex(), 0, DEFAULT_NUM_TRACKS-1)
+    query = QSqlQuery()
+    result = query.exec_("DELETE FROM tracks")
+    tracklist_model.endRemoveRows()
+    tracklist_model.select()
+    QTest.qWait(500)
+
+
+@step("I add a new track to the power hour with the context menu")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    context.tracklist._build_custom_menu(QPoint(0, 0))
+    menu = QApplication.activePopupWidget()
+    QTest.keyClick(menu, Qt.Key_Down)
+    QTest.keyClick(menu, Qt.Key_Enter)
+
+
+@then("there should be a track in the power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that(context.main_window.tracklist_model.rowCount(), is_(1))

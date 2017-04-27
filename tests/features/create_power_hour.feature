@@ -55,3 +55,8 @@ Feature: Create power hour
     And I reload the app
     And I select the power hour I created
     Then I should still see the tracks I added
+
+  Scenario: Adding a track with the context menu when there are no other tracks
+    When I remove all the tracks from a power hour
+    And I add a new track to the power hour with the context menu
+    Then there should be a track in the power hour

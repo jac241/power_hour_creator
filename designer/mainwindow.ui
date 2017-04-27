@@ -512,30 +512,6 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="tracklistControls">
-          <item>
-           <widget class="QPushButton" name="addTrackButton">
-            <property name="text">
-             <string>Add Track</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-        <item>
          <widget class="QCheckBox" name="videoCheckBox">
           <property name="text">
            <string>Video?</string>

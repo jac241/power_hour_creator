@@ -150,7 +150,6 @@ class TrackDelegate(QItemDelegate):
         if self._row_has_a_track(index):
             return True
 
-
     def _column_is_a_read_only_column(self, index):
         return index.column() in self._read_only_columns
 
@@ -258,6 +257,12 @@ class TracklistModel(QSqlTableModel):
         self.database().commit()
         self.endInsertRows()
 
+    def add_track_to_end(self):
+        self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
+        self.insertRow(self.rowCount())
+        self.endInsertRows()
+        self.select()
+
     def insertRow(self, position, *args, **kwargs):
         query = QSqlQuery()
 
@@ -292,18 +297,28 @@ class TracklistModel(QSqlTableModel):
         self.database().commit()
         self.endInsertRows()
 
-        self._sort_by_position()
+        self.select()
 
     def _increment_position_for_rows_from(self, row):
         # need to use a weird query here http://stackoverflow.com/questions/7703196/sqlite-increment-unique-integer-field
 
         query = QSqlQuery()
-        query.prepare('UPDATE tracks SET position = -(position+1) WHERE position >= :pos')
-        query.bindValue(':pos', row)
+        query.prepare(
+            'UPDATE tracks '
+            'SET position = -(position+1) '
+            'WHERE position >= :position AND power_hour_id = :power_hour_id'
+        )
+        query.bindValue(':position', row)
+        query.bindValue(':power_hour_id', self.current_power_hour_id)
 
         self._rollback_and_error_if_unsuccessful(query.exec_())
 
-        query.prepare('UPDATE tracks SET position = -position WHERE position < 0')
+        query.prepare(
+            'UPDATE tracks '
+            'SET position = -position '
+            'WHERE position < 0 AND power_hour_id = :power_hour_id'
+        )
+        query.bindValue(':power_hour_id', self.current_power_hour_id)
 
         self._rollback_and_error_if_unsuccessful(query.exec_())
 
@@ -326,7 +341,7 @@ class TracklistModel(QSqlTableModel):
         self.database().commit()
         self.endRemoveRows()
 
-        self._sort_by_position()
+        self.select()
 
     def _sort_by_position(self):
         self.sort(self.Columns.position, Qt.AscendingOrder)
@@ -334,15 +349,25 @@ class TracklistModel(QSqlTableModel):
     def removeRow(self, position, *args, **kwargs):
         query = QSqlQuery()
 
-        query.prepare('DELETE FROM tracks WHERE position = :position')
+        query.prepare(
+            'DELETE FROM tracks '
+            'WHERE position = :position AND power_hour_id = :power_hour_id'
+        )
+
         query.bindValue(":position", position)
+        query.bindValue(":power_hour_id", self.current_power_hour_id)
 
         return query.exec_()
 
     def _decrement_position_for_tracks_from(self, position):
         query = QSqlQuery()
-        query.prepare('UPDATE tracks SET position = position -1 WHERE position > :pos')
-        query.bindValue(':pos', position)
+        query.prepare(
+            'UPDATE tracks '
+            'SET position = position -1 '
+            'WHERE position > :position AND power_hour_id = :power_hour_id')
+        query.bindValue(':position', position)
+        query.bindValue(':power_hour_id', self.current_power_hour_id)
+
         self._rollback_and_error_if_unsuccessful(query.exec_())
 
 
@@ -408,17 +433,22 @@ class Tracklist(QTableView):
     def _build_custom_menu(self, position):
         menu = QMenu(self)
 
-        insert_above = QAction('Insert Track Above', self)
-        insert_above.triggered.connect(self._insert_row_above)
-        menu.addAction(insert_above)
+        if self.model().rowCount() > 0:
+            insert_above = QAction('Insert Track Above', self)
+            insert_above.triggered.connect(self._insert_row_above)
+            menu.addAction(insert_above)
 
-        insert_below = QAction('Insert Track Below', self)
-        insert_below.triggered.connect(self._insert_row_below)
-        menu.addAction(insert_below)
+            insert_below = QAction('Insert Track Below', self)
+            insert_below.triggered.connect(self._insert_row_below)
+            menu.addAction(insert_below)
 
-        delete_selected = QAction('Delete Selected Tracks', self)
-        delete_selected.triggered.connect(self._delete_selected_tracks)
-        menu.addAction(delete_selected)
+            delete_selected = QAction('Delete Selected Tracks', self)
+            delete_selected.triggered.connect(self._delete_selected_tracks)
+            menu.addAction(delete_selected)
+
+        add_track_to_end = QAction('Add Track To End', self)
+        add_track_to_end.triggered.connect(self.model().add_track_to_end)
+        menu.addAction(add_track_to_end)
 
         menu.popup(self.viewport().mapToGlobal(position))
 
