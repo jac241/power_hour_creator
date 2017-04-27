@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QLineEdit
 from behave import *
 from hamcrest import *
 
-from power_hour_creator.ui.tracklist import DisplayTime
+from power_hour_creator.ui.tracklist import DisplayTime, TracklistModel
 
 use_step_matcher("re")
 
@@ -16,7 +16,6 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     tracklist = context.main_window.tracklist
-    columns = tracklist.Columns
     start_time_column = tracklist.model().Columns.start_time
 
     delegate = tracklist.itemDelegate()

@@ -5,7 +5,7 @@ from PyQt5.Qt import Qt
 from behave import *
 
 from power_hour_creator.media import TRACK_LENGTH
-from power_hour_creator.ui.tracklist import Tracklist
+from power_hour_creator.ui.tracklist import Tracklist, TracklistModel
 
 Track = namedtuple('Track', 'url length')
 tracks = [
@@ -29,7 +29,7 @@ def add_song_to_tracklist(context, full_song=False, video=False, pos=None):
     viewport = context.main_window.tracklist.viewport()
 
     current_row = pos or context.num_tracks + 1
-    url_cell_pos = tracklist_cell_pos(context, row=current_row, column=Tracklist.Columns.url)
+    url_cell_pos = tracklist_cell_pos(context, row=current_row, column=TracklistModel.Columns.url)
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
 
@@ -40,7 +40,7 @@ def add_song_to_tracklist(context, full_song=False, video=False, pos=None):
     QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
 
     if full_song:
-        full_song_cell_pos = tracklist_cell_pos(context, row=current_row, column=Tracklist.Columns.full_song)
+        full_song_cell_pos = tracklist_cell_pos(context, row=current_row, column=TracklistModel.Columns.full_song)
         QTest.mouseClick(viewport, Qt.LeftButton, pos=full_song_cell_pos)
         QTest.keyClick(viewport.focusWidget(), Qt.Key_Down)
 

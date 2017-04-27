@@ -10,7 +10,7 @@ from power_hour_creator import config
 from power_hour_creator.media import CreatePowerHourService, PowerHour
 from power_hour_creator.resources import image_path
 from power_hour_creator.ui.power_hour_list import PowerHourModel
-from power_hour_creator.ui.tracklist import TracklistModel
+from power_hour_creator.ui.tracklist import TracklistModel, TrackDelegate
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
 
@@ -32,6 +32,7 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
     def _setup_tracklist(self):
         self._setup_tracklist_model()
+        self._setup_tracklist_delegate()
         self._setup_tracklist_appearance()
 
     def _setup_power_hour_list_view(self):
@@ -45,6 +46,14 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
         self.power_hour_model.rowsInserted.connect(self.powerHoursListView.select_new_power_hour)
 
+    def _setup_tracklist_delegate(self):
+        delegate = TrackDelegate(
+            read_only_columns=self.tracklist_model.Columns.read_only,
+            time_columns=self.tracklist_model.Columns.time,
+            boolean_columns=self.tracklist_model.Columns.checkbox
+        )
+        self.tracklist.setItemDelegate(delegate)
+
     def _setup_tracklist_appearance(self):
         self.tracklist.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
@@ -55,11 +64,11 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.tracklist_model.setEditStrategy(QSqlTableModel.OnFieldChange)
         self.tracklist_model.select()
 
-        self.tracklist_model.setHeaderData(self.tracklist.Columns.url, Qt.Horizontal, "URL")
-        self.tracklist_model.setHeaderData(self.tracklist.Columns.title, Qt.Horizontal, "Title")
-        self.tracklist_model.setHeaderData(self.tracklist.Columns.length, Qt.Horizontal, "Duration")
-        self.tracklist_model.setHeaderData(self.tracklist.Columns.start_time, Qt.Horizontal, "Start Time")
-        self.tracklist_model.setHeaderData(self.tracklist.Columns.full_song, Qt.Horizontal, "Full Song?")
+        self.tracklist_model.setHeaderData(self.tracklist_model.Columns.url, Qt.Horizontal, "URL")
+        self.tracklist_model.setHeaderData(self.tracklist_model.Columns.title, Qt.Horizontal, "Title")
+        self.tracklist_model.setHeaderData(self.tracklist_model.Columns.length, Qt.Horizontal, "Duration")
+        self.tracklist_model.setHeaderData(self.tracklist_model.Columns.start_time, Qt.Horizontal, "Start Time")
+        self.tracklist_model.setHeaderData(self.tracklist_model.Columns.full_song, Qt.Horizontal, "Full Song?")
 
         self.tracklist.setModel(self.tracklist_model)
         self.tracklist.hideColumn(0)  # id

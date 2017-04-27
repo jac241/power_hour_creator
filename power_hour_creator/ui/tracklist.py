@@ -100,7 +100,7 @@ class TrackDelegate(QItemDelegate):
         return index.column() in self._boolean_columns
 
     def _row_has_a_track(self, index):
-        url = index.sibling(index.row(), Tracklist.Columns.url).data(Qt.DisplayRole)
+        url = index.sibling(index.row(), TracklistModel.Columns.url).data(Qt.DisplayRole)
         return url is not None and url.strip()
 
     def setEditorData(self, editor, index):
@@ -144,7 +144,7 @@ class TrackDelegate(QItemDelegate):
         if self._column_is_a_read_only_column(index):
             return False
 
-        if index.column() == Tracklist.Columns.url:
+        if index.column() == TracklistModel.Columns.url:
             return True
 
         if self._row_has_a_track(index):
@@ -242,7 +242,7 @@ class TracklistModel(QSqlTableModel):
         q_filter += " AND " if self.filter().strip() else ''
         q_filter += "length(url) > 0"
         model.setFilter(q_filter)
-        model.setSort(Tracklist.Columns.position, Qt.AscendingOrder)
+        model.setSort(self.Columns.position, Qt.AscendingOrder)
         model.select()
         return model
 
@@ -376,32 +376,8 @@ class Tracklist(QTableView):
     invalid_url = pyqtSignal(str)
     error_downloading = pyqtSignal(str)
 
-    class Columns:
-        id = 0
-        position = 1
-        url = 2
-        title = 3
-        length = 4
-        start_time = 5
-        full_song = 6
-        power_hour_id = 7
-        read_only = [title, length]
-        time = [length, start_time]
-        checkbox = [full_song]
-
-    class OldColumns:
-        url = 0
-        title = 1
-        track_length = 2
-        start_time = 3
-        full_song = 4
-        read_only = [title, track_length]
-        time = [track_length, start_time]
-        checkbox = [full_song]
-
     def __init__(self, parent):
         super().__init__(parent)
-        self._setup_delegate()
         self._setup_context_menu()
 
     def add_track(self):
@@ -414,15 +390,6 @@ class Tracklist(QTableView):
         if event.key() == Qt.Key_Tab:
             pass
         super().keyPressEvent(event)
-
-    def _setup_delegate(self):
-        self.setItemDelegate(
-            TrackDelegate(
-                read_only_columns=self.Columns.read_only,
-                time_columns=self.Columns.time,
-                boolean_columns= self.Columns.checkbox
-            )
-        )
 
     def _last_row_index(self):
         return self.rowCount() - 1

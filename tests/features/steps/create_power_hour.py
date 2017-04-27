@@ -13,7 +13,7 @@ import re
 
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime, Tracklist, \
-    DEFAULT_NUM_TRACKS
+    DEFAULT_NUM_TRACKS, TracklistModel
 from power_hour_creator.media import TRACK_LENGTH, MediaFile
 from tests.features.environment import close_app, launch_app
 
@@ -77,7 +77,7 @@ def step_impl(context):
     blank_start_time_cell = tracklist_cell_pos(
         context,
         row=5,
-        column=tracklist.Columns.start_time
+        column=TracklistModel.Columns.start_time
     )
 
     another_cell = tracklist_cell_pos(context, row=5, column=0)
@@ -95,7 +95,7 @@ def step_impl(context, track_num, start_time):
     """
     cell = tracklist_cell_pos(context,
                               row=int(track_num),
-                              column=context.tracklist.Columns.start_time)
+                              column=TracklistModel.Columns.start_time)
     QTest.mouseClick(context.tracklist.viewport(), Qt.LeftButton, pos=cell)
 
     QTest.keyClicks(context.tracklist.viewport().focusWidget(), start_time)
@@ -191,7 +191,7 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     viewport = context.main_window.tracklist.viewport()
-    url_cell_pos = tracklist_cell_pos(context, row=1, column=Tracklist.Columns.url)
+    url_cell_pos = tracklist_cell_pos(context, row=1, column=TracklistModel.Columns.url)
 
     # Right click doesn't work for some reason...
     # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
@@ -212,7 +212,7 @@ def step_impl(context, direction, pos):
     """
     :type context: behave.runner.Context
     """
-    menu = open_context_menu_at(context, row=int(pos), column=Tracklist.Columns.url)
+    menu = open_context_menu_at(context, row=int(pos), column=TracklistModel.Columns.url)
 
     QTest.keyClick(menu, Qt.Key_Down)
     if direction == 'below':
@@ -267,7 +267,7 @@ def step_impl(context, pos):
     """
     viewport = context.tracklist.viewport()
 
-    menu = open_context_menu_at(context, row=int(pos), column=Tracklist.Columns.title)
+    menu = open_context_menu_at(context, row=int(pos), column=TracklistModel.Columns.title)
     for _ in range(3):
         QTest.keyClick(menu, Qt.Key_Down)
     QTest.keyClick(menu, Qt.Key_Enter)
