@@ -166,6 +166,7 @@ class DbError(IOError):
 class TracklistModel(QSqlTableModel):
 
     power_hour_changed = pyqtSignal()
+    error_downloading = pyqtSignal(str, str)
 
     class Columns:
         id = 0
@@ -199,8 +200,8 @@ class TracklistModel(QSqlTableModel):
             self._show_track_details(row, find_track(url))
         except ValueError:
             self._clear_row(row)
-        except DownloadError:
-            self.error_downloading.emit(url)
+        except DownloadError as e:
+            self.error_downloading.emit(url, str(e))
             self._clear_out_invalid_url(row)
 
     def _show_track_details(self, row, track):
@@ -373,8 +374,6 @@ class TracklistModel(QSqlTableModel):
 
 class Tracklist(QTableView):
 
-    invalid_url = pyqtSignal(str)
-    error_downloading = pyqtSignal(str)
 
     def __init__(self, parent):
         super().__init__(parent)

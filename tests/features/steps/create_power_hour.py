@@ -11,6 +11,8 @@ from hamcrest import *
 import os
 import re
 
+from youtube_dl import DownloadError
+
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime, Tracklist, \
     DEFAULT_NUM_TRACKS, TracklistModel
@@ -368,3 +370,25 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     assert_that(context.main_window.tracklist_model.rowCount(), is_(1))
+
+
+@when("there's an error downloading track info")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    mock = Mock()
+    context.expected_message = "Here's the message"
+    mock.side_effect = DownloadError(context.expected_message)
+    context.main_window.tracklist_model._show_track_details = mock
+    add_song_to_tracklist(context)
+
+
+@then("I should see a message in the status bar")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    message = context.main_window.statusBar.currentMessage()
+    assert_that(message, contains_string(context.last_track_added.url))
+    assert_that(message, contains_string(context.expected_message))

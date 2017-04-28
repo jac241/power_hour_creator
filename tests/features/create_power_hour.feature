@@ -24,6 +24,13 @@ Feature: Create power hour
     And I create a video power hour
     Then that video power hour should have been created
 
+  Scenario: I should be able to cancel creating a power hour
+    When I add 2 tracks to a power hour
+    And I add a full song to the power hour
+    And I create a power hour
+    And I click cancel
+    Then that power hour should not have been created
+
   Scenario: I should be able to add a track above with the right click menu
     When I add a track to the power hour at row 1
     And I choose to insert a row above row 1 with the context menu
@@ -60,3 +67,8 @@ Feature: Create power hour
     When I remove all the tracks from a power hour
     And I add a new track to the power hour with the context menu
     Then there should be a track in the power hour
+
+  Scenario: I should see a message in the status bar if there's an error downloading a track's info
+    When there's an error downloading track info
+    Then I should see a message in the status bar
+

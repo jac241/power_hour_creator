@@ -79,8 +79,8 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.createPowerHourButton.clicked.connect(self._export_power_hour)
 
     def _connect_track_errors(self):
-        self.tracklist.invalid_url.connect(self._show_invalid_url)
-        self.tracklist.error_downloading.connect(self._show_error_downloading)
+        # self.tracklist.invalid_url.connect(self._show_invalid_url)
+        self.tracklist_model.error_downloading.connect(self._show_error_downloading)
 
     def _enable_create_power_hour_button_when_tracks_present(self):
         self.tracklist_model.power_hour_changed.connect(self._try_to_enable_create_button_on_tracklist_change)
@@ -93,8 +93,10 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
     def _show_invalid_url(self, url):
         self.statusBar.showMessage('URL "{}" is invalid'.format(url))
 
-    def _show_error_downloading(self, url):
-        self.statusBar.showMessage('Error downloading "{}"'.format(url))
+    def _show_error_downloading(self, url, error_message):
+        self.statusBar.showMessage(
+            'Error downloading "{}": {}'.format(url, error_message)
+        )
 
     def _show_worker_error(self, message):
         msg = QMessageBox(self)
