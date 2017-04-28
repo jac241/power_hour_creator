@@ -1,6 +1,6 @@
 appdirs
 attrs
-youtube_dl>=2017.4.2
+youtube_dl>=2017.4.26
 pydub
 PyQt5
 PyInstaller
@@ -10,3 +10,4 @@ behave
 QDarkStyle
 pyhamcrest
 delegator.py
+psutil==5.2.2

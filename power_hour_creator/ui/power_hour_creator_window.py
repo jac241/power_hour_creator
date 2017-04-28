@@ -1,6 +1,6 @@
 import os
 
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtSql import QSqlTableModel
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, \
@@ -13,6 +13,10 @@ from power_hour_creator.ui.power_hour_list import PowerHourModel
 from power_hour_creator.ui.tracklist import TracklistModel, TrackDelegate
 from .forms.mainwindow import Ui_mainWindow
 from .forms.power_hour_export_dialog import Ui_PowerHourExportDialog
+
+ERROR_DISPLAY_TIME_IN_MS = 5000
+CREATED_DISPLAY_TIME_IN_MS = 10000
+
 
 class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
@@ -79,7 +83,6 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.createPowerHourButton.clicked.connect(self._export_power_hour)
 
     def _connect_track_errors(self):
-        # self.tracklist.invalid_url.connect(self._show_invalid_url)
         self.tracklist_model.error_downloading.connect(self._show_error_downloading)
 
     def _enable_create_power_hour_button_when_tracks_present(self):
@@ -90,12 +93,10 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
     def _try_to_enable_create_button_on_tracklist_change(self):
         self.createPowerHourButton.setEnabled(self.tracklist_model.has_tracks())
 
-    def _show_invalid_url(self, url):
-        self.statusBar.showMessage('URL "{}" is invalid'.format(url))
-
     def _show_error_downloading(self, url, error_message):
         self.statusBar.showMessage(
-            'Error downloading "{}": {}'.format(url, error_message)
+            'Error downloading "{}": {}'.format(url, error_message),
+            ERROR_DISPLAY_TIME_IN_MS
         )
 
     def _show_worker_error(self, message):
@@ -108,16 +109,23 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         is_video = self.videoCheckBox.checkState()
         power_hour_path = self.get_power_hour_path(is_video=is_video)
         if power_hour_path:
-            power_hour = PowerHour(self.tracklist_model.tracks, power_hour_path, is_video)
+
+            power_hour = PowerHour(
+                self.tracklist_model.tracks,
+                power_hour_path,
+                is_video
+            )
+
             thread = PowerHourExportThread(self, power_hour)
             progress_dialog = ExportPowerHourDialog(self, power_hour)
+            progress_dialog.cancelButton.clicked.connect(thread.cancel_export)
 
             thread.progress.connect(progress_dialog.overallProgressBar.setValue)
             thread.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
             thread.track_download_progress.connect(progress_dialog.show_track_download_progress)
             thread.error.connect(self._show_worker_error)
             thread.finished.connect(progress_dialog.close)
-            thread.finished.connect(self._show_finished_status)
+            thread.power_hour_created.connect(self._show_power_hour_created)
             thread.finished.connect(thread.deleteLater)
 
             progress_dialog.show()
@@ -133,8 +141,9 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
                                                os.path.expanduser('~/Music'),
                                                "Audio (*.m4a)")[0]
 
-    def _show_finished_status(self):
-        self.statusBar.showMessage("Power hour created!", 5000)
+    def _show_power_hour_created(self):
+        self.statusBar.showMessage(
+            "Power hour created!", CREATED_DISPLAY_TIME_IN_MS)
 
     def _connect_help_menu(self):
         def show_logs():
@@ -169,6 +178,9 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
 
 class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
+
+    DOT_BLINK_TIME_IN_MS = 250
+
     def __init__(self, parent, power_hour):
         QDialog.__init__(self, parent)
         Ui_PowerHourExportDialog.__init__(self)
@@ -179,11 +191,41 @@ class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
         self._setup_signals()
         self._setup_progress_bar()
 
+    def setupUi(self, ui):
+        super().setupUi(ui)
+        self.cancellingLabel.hide()
+
     def _setup_progress_bar(self):
         self.overallProgressBar.setMaximum(len(self._power_hour.tracks))
 
     def _setup_signals(self):
-        self.cancelButton.clicked.connect(self.close)
+        self.cancelButton.clicked.connect(self._cancelling_export)
+
+    def _cancelling_export(self):
+        self._hide_progress_widgets()
+        self._show_cancelling_widgets()
+
+    def _hide_progress_widgets(self):
+        self.currentSongLabel.hide()
+        self.currentSongProgressBar.hide()
+        self.overallProgressBar.hide()
+        self.overallProgressLabel.hide()
+
+    def _show_cancelling_widgets(self):
+        self.cancellingLabel.show()
+        timer = QTimer(self)
+        timer.timeout.connect(self._update_cancelling_progress)
+        timer.start(self.DOT_BLINK_TIME_IN_MS)
+
+    def _update_cancelling_progress(self):
+        text = self.cancellingLabel.text()
+        num_dots = 0
+        for c in text:
+            if c == '.':
+                num_dots += 1
+
+        dots = ('.' * ((num_dots + 1) % 4))
+        self.cancellingLabel.setText(text.replace('.', '') + dots)
 
     def show_new_downloading_track(self, track):
         self.currentSongLabel.setText("Downloading: {}".format(track.title))
@@ -200,6 +242,7 @@ class PowerHourExportThread(QThread):
 
     progress = pyqtSignal(int)
     new_track_downloading = pyqtSignal(object)
+    power_hour_created = pyqtSignal()
     finished = pyqtSignal()
     track_download_progress = pyqtSignal(object, object)
     error = pyqtSignal(object)
@@ -207,13 +250,18 @@ class PowerHourExportThread(QThread):
     def __init__(self, parent, power_hour):
         super().__init__(parent)
         self._power_hour = power_hour
+        self.service = None
+        self._is_cancelled = False
 
     def run(self):
-        service = CreatePowerHourService(
+        self.service = CreatePowerHourService(
             power_hour=self._power_hour,
             progress_listener=self)
 
-        service.execute()
+        self.service.execute()
+
+        if not self._is_cancelled:
+            self.power_hour_created.emit()
 
         self.finished.emit()
 
@@ -231,4 +279,9 @@ class PowerHourExportThread(QThread):
 
     def on_service_error(self, message):
         self.error.emit(message)
+
+    def cancel_export(self):
+        self._is_cancelled = True
+        self.service.cancel()
+
 

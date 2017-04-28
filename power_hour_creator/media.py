@@ -103,6 +103,7 @@ class CreatePowerHourService:
         self._power_hour = power_hour
         self._progress_listener = progress_listener
         self._logger = logging.getLogger(__name__)
+        self._is_cancelled = False
 
     def execute(self):
         with TemporaryDirectory() as download_dir:
@@ -114,6 +115,9 @@ class CreatePowerHourService:
             try:
                 output_files = []
                 for index, track in enumerate(self._power_hour.tracks):
+                    if self._is_cancelled:
+                        break
+
                     self._progress_listener.on_new_track_downloading(index, track)
 
                     media_file = MediaFile(
@@ -126,7 +130,11 @@ class CreatePowerHourService:
                     processor.process_file(media_file)
                     output_files.append(media_file.output_path)
 
-                processor.merge_files_into_power_hour(output_files, self._power_hour.path)
+                if not self._is_cancelled:
+                    processor.merge_files_into_power_hour(output_files, self._power_hour.path)
+                else:
+                    self._handle_cancellation()
+
             except subprocess.CalledProcessError as e:
                 self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
             except FileNotFoundError as e:
@@ -163,6 +171,15 @@ class CreatePowerHourService:
                 progress_listener=self._progress_listener,
                 downloader=YoutubeDL({**shared_opts, **audio_opts})
             )
+
+    def cancel(self):
+        self._is_cancelled = True
+
+    def _handle_cancellation(self):
+        try:
+            os.remove(self._power_hour.path)
+        except FileNotFoundError:
+            pass
 
 
 class MediaProcessor:

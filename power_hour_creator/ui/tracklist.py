@@ -241,7 +241,7 @@ class TracklistModel(QSqlTableModel):
         model.setTable(self.tableName())
         q_filter = self.filter()
         q_filter += " AND " if self.filter().strip() else ''
-        q_filter += "length(url) > 0"
+        q_filter += "length(trim(url)) > 0"
         model.setFilter(q_filter)
         model.setSort(self.Columns.position, Qt.AscendingOrder)
         model.select()

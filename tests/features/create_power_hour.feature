@@ -7,6 +7,7 @@ Feature: Create power hour
     And I set track 1's start time to 0:00
     And I create a power hour
     Then that power hour should have been created
+    And I should see the power hour created message
 
   Scenario: I should be able to move around the tracklist and create a power hour without errors
     When I add 1 tracks to a power hour
@@ -23,13 +24,6 @@ Feature: Create power hour
     And I set track 1's start time to 0:00
     And I create a video power hour
     Then that video power hour should have been created
-
-  Scenario: I should be able to cancel creating a power hour
-    When I add 2 tracks to a power hour
-    And I add a full song to the power hour
-    And I create a power hour
-    And I click cancel
-    Then that power hour should not have been created
 
   Scenario: I should be able to add a track above with the right click menu
     When I add a track to the power hour at row 1
@@ -72,3 +66,11 @@ Feature: Create power hour
     When there's an error downloading track info
     Then I should see a message in the status bar
 
+  Scenario: I should be able to cancel creating a power hour
+    When I add 2 tracks to a power hour
+    And I add a full song to the power hour
+    And I create a power hour
+    And I click cancel
+    Then I should see that the export is cancelling
+    And that power hour should have been cancelled
+    And I should not see the power hour created message

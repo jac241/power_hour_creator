@@ -1,5 +1,6 @@
 import time
 
+import psutil
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QApplication
@@ -49,23 +50,35 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    wait_for_power_hour_creation(context)
+    wait_for_progress_dialog_to_go_away(context)
 
     assert_that(os.path.exists(context.export_path), is_(True))
     assert_power_hour_is_correct_length(context)
 
-
-def wait_for_power_hour_creation(context):
-    def export_dialog_visible():
-        export_dialog = next((w for w in context.app.topLevelWidgets() if
-                              type(w) is ExportPowerHourDialog), None)
-        return export_dialog.isVisible()
-
+def wait_for_progress_dialog_to_go_away(context):
     start = time.time()
-    while export_dialog_visible():
+    while export_dialog_visible(context):
         if time.time() - start > 300:
             break
         QTest.qWait(100)
+
+
+def export_dialog_visible(context):
+    export_dialog = get_export_dialog(context)
+    return export_dialog.isVisible()
+
+
+def get_export_dialog(context):
+    return next((w for w in context.app.topLevelWidgets() if
+                 type(w) is ExportPowerHourDialog), None)
+
+
+@step("I should see the power hour created message")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that('created', is_in(context.main_window.statusBar.currentMessage()))
 
 
 @step("I click around the tracklist start times")
@@ -180,7 +193,7 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    wait_for_power_hour_creation(context)
+    wait_for_progress_dialog_to_go_away(context)
 
     assert_that(os.path.exists(context.export_path), is_(True))
     assert_power_hour_is_correct_length(context)
@@ -392,3 +405,52 @@ def step_impl(context):
     message = context.main_window.statusBar.currentMessage()
     assert_that(message, contains_string(context.last_track_added.url))
     assert_that(message, contains_string(context.expected_message))
+
+
+@step("I click cancel")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    wait_for(export_dialog_visible, context)
+    wait_for(lambda: len(psutil.Process().children()) > 0)
+
+    dialog = get_export_dialog(context)
+    dialog.cancelButton.click()
+
+
+@then("I should see that the export is cancelling")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    dialog = get_export_dialog(context)
+    assert_that(dialog.cancellingLabel.isVisible(), is_(True))
+
+    wait_for_progress_dialog_to_go_away(context)
+
+
+@then("that power hour should have been cancelled")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    pnames = map(lambda p: p.name(), psutil.Process().children())
+    for pname in pnames:
+        assert_that("ffmpeg", not_(is_in(pname)))
+
+    assert_that(os.path.exists(context.export_path), is_(False))
+
+
+def wait_for(f, *fargs, **fkwargs):
+    while not f(*fargs, **fkwargs):
+        QTest.qWait(100)
+
+
+@step("I should not see the power hour created message")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert_that(context.main_window.statusBar.currentMessage(), is_(''))
+
