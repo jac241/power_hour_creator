@@ -15,7 +15,7 @@ import re
 from youtube_dl import DownloadError
 
 from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
-from power_hour_creator.ui.tracklist import DisplayTime, Tracklist, \
+from power_hour_creator.ui.tracklist import DisplayTime, \
     DEFAULT_NUM_TRACKS, TracklistModel
 from power_hour_creator.media import TRACK_LENGTH, MediaFile
 from tests.features.environment import close_app, launch_app

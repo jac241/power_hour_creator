@@ -1,25 +1,17 @@
-from PyQt5.QtCore import QSortFilterProxyModel, QModelIndex
-from PyQt5.QtGui import QBrush
-from PyQt5.QtGui import QColor
+from PyQt5.QtCore import QModelIndex
 from PyQt5.QtSql import QSqlTableModel, QSqlQuery, QSqlDatabase
-from PyQt5.QtWidgets import QApplication, QAbstractItemView, QMenu, QAction, \
+from PyQt5.QtWidgets import QMenu, QAction, \
     QTableView
-from PyQt5.QtWidgets import QCheckBox
 from PyQt5.QtWidgets import QComboBox
-from PyQt5.QtWidgets import QHBoxLayout
 from PyQt5.QtWidgets import QItemDelegate
 from PyQt5.QtWidgets import QLineEdit
-from PyQt5.QtWidgets import QStyle
-from PyQt5.QtWidgets import QStyleOptionButton
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
-
-from PyQt5.QtWidgets import QWidget
 
 from power_hour_creator.media import DownloadError, Track, find_track
 
 DEFAULT_NUM_TRACKS = 60
+
 
 class DisplayTime:
     def __init__(self, time):

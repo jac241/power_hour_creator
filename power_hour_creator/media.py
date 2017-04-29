@@ -132,11 +132,13 @@ class CreatePowerHourService:
 
                 if not self._is_cancelled:
                     processor.merge_files_into_power_hour(output_files, self._power_hour.path)
-                else:
+
+                if self._is_cancelled:  # can be cancelled at any time
                     self._handle_cancellation()
 
             except subprocess.CalledProcessError as e:
-                self._progress_listener.on_service_error('Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
+                self._progress_listener.on_service_error(
+                    'Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
             except FileNotFoundError as e:
                 self._progress_listener.on_service_error(str(e))
 
@@ -252,7 +254,7 @@ class AudioProcessor(MediaProcessor):
 class VideoProcessor(MediaProcessor):
 
     def after_download(self, media_file):
-        self._ensure_frame_rate_and_resolution_are_correct(media_file)
+        self._prepare_files_for_merge(media_file)
 
     def merge_files_into_power_hour(self, output_files, power_hour_path):
         scale_string = 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1'
@@ -288,23 +290,16 @@ class VideoProcessor(MediaProcessor):
         ]
 
         self._logger.debug('Combining videos into power hour with cmd: {}'.format(' '.join(cmd)))
-        # subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
         self._log_process_output(p)
 
         self._logger.debug('Done')
 
-
-
-    def _ensure_frame_rate_and_resolution_are_correct(self, media_file):
+    def _prepare_files_for_merge(self, media_file):
         if media_file.should_be_shortened:
             self._shorten_to_one_minute(media_file)
             self._move_file_back_to_download_path(media_file)
-
-        # if not self._frame_rate_and_resolution_are_correct(media_file):
-        #     self._convert_video_to_correct_attributes(media_file)
-        #     self._move_file_back_to_download_path(media_file)
 
         self._move_file_to_output_path(media_file)
 
