@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
 
-from power_hour_creator.media import DownloadError, Track, find_track
+from power_hour_creator.media import Track, find_track
+from youtube_dl import DownloadError
 
 DEFAULT_NUM_TRACKS = 60
 

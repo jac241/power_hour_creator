@@ -135,7 +135,7 @@ def step_impl(context):
 
 def duration(file):
     import subprocess
-    from power_hour_creator.media import ffmpeg_exe
+    from power_hour_creator.resources import ffmpeg_exe
 
     cmd = [
         ffmpeg_exe(),

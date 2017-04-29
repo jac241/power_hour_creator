@@ -8,22 +8,10 @@ from tempfile import TemporaryDirectory
 
 import attr
 import delegator
-from youtube_dl import YoutubeDL, DownloadError
+from youtube_dl import YoutubeDL
 
-from power_hour_creator.config import EXT_DIR
-from power_hour_creator.resources import resource_path
-
-
-def ffmpeg_dir():
-    return resource_path(os.path.join(EXT_DIR, 'ffmpeg-3.2.2-win32-static/bin'))
-
-
-def ffmpeg_exe():
-    return os.path.join(ffmpeg_dir(), 'ffmpeg')
-
-
-def ffprobe_exe():
-    return os.path.join(ffmpeg_dir(), 'ffprobe')
+from ffmpeg_normalize.__main__ import FFmpegNormalize
+from power_hour_creator.resources import ffmpeg_dir, ffmpeg_exe, ffprobe_exe
 
 TRACK_LENGTH = 60
 
@@ -48,6 +36,15 @@ class MediaFile:
         return os.path.splitext(self.download_path)[0] + '_out' + os.path.splitext(self.download_path)[1]
 
     @property
+    def download_path(self):
+        return os.path.join(self._directory, '{:05d}.{}'.format(self._position + 1, self.extension))
+
+    @property
+    def normalized_path(self):
+        dir, filepath  = os.path.split(self.output_path)
+        return os.path.join(dir, 'normalized-{}'.format(filepath))
+
+    @property
     def track_title(self):
         return self.track.title
 
@@ -58,10 +55,6 @@ class MediaFile:
     @property
     def should_be_shortened(self):
         return not self.track.full_song
-
-    @property
-    def download_path(self):
-        return os.path.join(self._directory, '{:05d}.{}'.format(self._position + 1, self.extension))
 
     @property
     def info(self):
@@ -98,6 +91,38 @@ def get_audio_downloader(progress_listener, download_dir, logger):
     return YoutubeDL(audio_opts)
 
 
+def build_audio_normalizer(media_files):
+    args = {
+        # map has no len, so we have to make it a list
+        # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
+        '<input-file>': list(map(lambda f: f.output_path, media_files)),
+        '--acodec': 'aac',
+        '--debug': True,
+        '--dir': False,
+        '--dry-run': False,
+        '--ebu': False,
+        '--extra-options': '-b:a 192k -ar 44100',
+        '--force': True,
+        '--format': 'wav',
+        '--level': '-26',
+        '--max': False,
+        '--merge': True,
+        '--no-prefix': False,
+        '--prefix': 'normalized',
+        '--threshold': '0.5',
+        '--verbose': False,
+    }
+
+    return FFmpegNormalize(args)
+
+
+def normalize_audio(media_files):
+    build_audio_normalizer(media_files).run()
+
+    for media_file in media_files:
+        shutil.copyfile(media_file.normalized_path, media_file.output_path)
+
+
 class CreatePowerHourService:
     def __init__(self, power_hour, progress_listener):
         self._power_hour = power_hour
@@ -113,7 +138,7 @@ class CreatePowerHourService:
             processor = self._build_media_processor(download_dir)
 
             try:
-                output_files = []
+                media_files = []
                 for index, track in enumerate(self._power_hour.tracks):
                     if self._is_cancelled:
                         break
@@ -128,10 +153,14 @@ class CreatePowerHourService:
                     )
 
                     processor.process_file(media_file)
-                    output_files.append(media_file.output_path)
+                    media_files.append(media_file)
 
                 if not self._is_cancelled:
-                    processor.merge_files_into_power_hour(output_files, self._power_hour.path)
+                    normalize_audio(media_files)
+
+                if not self._is_cancelled:
+                    ouput_paths = list(map(lambda f: f.output_path, media_files))
+                    processor.merge_files_into_power_hour(ouput_paths, self._power_hour.path)
 
                 if self._is_cancelled:  # can be cancelled at any time
                     self._handle_cancellation()
@@ -325,7 +354,6 @@ class VideoProcessor(MediaProcessor):
         ]
 
         self._logger.debug('Resizing and correcting video {} with command: {}'.format(media_file.track_title, ' '.join(cmd)))
-        # subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
 
         self._log_process_output(p)
