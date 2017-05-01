@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tracks (
   url         text NOT NULL,
   title       text NOT NULL,
   length      integer NOT NULL,
-  start_time  integer NOT NULL,
+  start_time  decimal(7, 3) NOT NULL,
   full_song   integer NOT NULL DEFAULT 0,
   power_hour_id integer NOT NULL, FOREIGN KEY(power_hour_id) REFERENCES power_hours(id)
 );

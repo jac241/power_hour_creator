@@ -171,7 +171,7 @@ def migrate_database():
     for migration in map(lambda p: Migration(p), sorted(migration_paths)):
 
         if migration.already_performed(initial_migration_level):
-            break
+            continue
 
         with open(migration.path, 'r') as f:
             QSqlDatabase.database().transaction()

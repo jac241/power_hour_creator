@@ -5,6 +5,7 @@ Feature: Create power hour
     When I add 2 tracks to a power hour
     And I add a full song to the power hour
     And I set track 1's start time to 0:00
+    And I set track 2's start time to 0:00.45
     And I create a power hour
     Then that power hour should have been created
     And I should see the power hour created message

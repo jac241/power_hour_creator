@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
 
+from decimal import Decimal
+
 from power_hour_creator.media import Track, find_track
 from youtube_dl import DownloadError
 
@@ -22,26 +24,29 @@ class DisplayTime:
         if self._already_a_time_str():
             return self._time
 
-        if self._has_alphabet_characters():
+        if self._has_invalid_characters():
             return ''
 
-        m, s = divmod(int(self._time), 60)
-        return "%02d:%02d" % (m, s)
+        m, s = divmod(round(Decimal(self._time), 3), 60)
+        s, f = divmod(s, 1)
+        f_str = ('%s' % f).lstrip('0').rstrip('0') if f > 0 else ''
 
-    def as_seconds(self):
-        if self._is_an_int():
+        return "%02d:%02d%s" % (m, s, f_str)
+
+    def as_decimal(self):
+        if self._is_a_number():
             return self._time
 
         if len(self._time) == 0:
             return self._time
 
-        if self._has_alphabet_characters():
+        if self._has_invalid_characters():
             return ''
 
         if self._just_seconds_in_string():
-            return int(self._time)
+            return Decimal(self._time)
 
-        return sum(x * int(t) for x, t in zip([60, 1], self._time.split(':')))
+        return sum(x * Decimal(t) for x, t in zip([60, 1], self._time.split(':')))
 
     def _already_a_time_str(self):
         return ':' in str(self._time)
@@ -49,11 +54,11 @@ class DisplayTime:
     def _just_seconds_in_string(self):
         return not self._already_a_time_str()
 
-    def _has_alphabet_characters(self):
-        return not self._is_an_int() and re.search('[a-zA-Z]', self._time)
+    def _has_invalid_characters(self):
+        return not self._is_a_number() and re.search('[^0-9.:]', self._time)
 
-    def _is_an_int(self):
-        return type(self._time) == int
+    def _is_a_number(self):
+        return type(self._time) != str
 
 
 class TrackDelegate(QItemDelegate):
@@ -111,7 +116,7 @@ class TrackDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if self._column_is_time_column_and_has_data(index):
-            model.setData(index, DisplayTime(editor.text()).as_seconds())
+            model.setData(index, str(DisplayTime(editor.text()).as_decimal()))
         elif index.column() in self._boolean_columns:
             value = True if editor.itemData(editor.currentIndex()) else False
             model.setData(index, value)
@@ -201,7 +206,7 @@ class TracklistModel(QSqlTableModel):
         self.submit()
         self.setData(self.index(row, self.Columns.title), track.title)
         self.setData(self.index(row, self.Columns.length), track.length)
-        self.setData(self.index(row, self.Columns.start_time), track.start_time)
+        self.setData(self.index(row, self.Columns.start_time), str(track.start_time))
         self.submitAll()
 
     def _clear_row(self, row):

@@ -144,7 +144,7 @@ def duration(file):
     ]
 
     output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    return DisplayTime(get_duration(output)).as_seconds()
+    return DisplayTime(get_duration(output)).as_decimal()
 
 
 def get_duration(output):

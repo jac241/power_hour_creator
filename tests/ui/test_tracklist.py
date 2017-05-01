@@ -3,14 +3,19 @@ from unittest.mock import MagicMock
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QTableWidgetItem
+from decimal import Decimal
 
 from power_hour_creator.ui.tracklist import DisplayTime, Tracklist
 
 
 class TestDisplayTime(TestCase):
-    def test_as_time_str_should_return_the_time_in_the_correct_format(self):
-        time = DisplayTime(181)
+    def test_as_time_str_should_return_the_time_in_the_correct_format_if_no_milliseconds(self):
+        time = DisplayTime(Decimal(181))
         self.assertEqual(time.as_time_str(), '03:01')
+
+    def test_as_time_str_should_return_the_time_in_the_correct_format_with_milliseconds(self):
+        time = DisplayTime('181.05')
+        self.assertEqual(time.as_time_str(), '03:01.05')
 
     def test_as_time_str_should_return_the_same_string_if_passed_a_time_string(self):
         time = DisplayTime('15:45')
@@ -20,54 +25,19 @@ class TestDisplayTime(TestCase):
         time = DisplayTime('aab')
         self.assertEqual(time.as_time_str(), '')
 
-    def test_as_seconds_should_generate_seconds_from_time_str(self):
-        time = DisplayTime('04:10')
-        self.assertEqual(time.as_seconds(), 250)
+    def test_as_decimal_should_generate_decimal_from_time_str(self):
+        time = DisplayTime('04:10.05')
+        self.assertEqual(time.as_decimal(), Decimal('250.05'))
 
-    def test_as_seconds_should_generate_seconds_if_only_seconds_given(self):
-        time = DisplayTime('300')
-        self.assertEqual(time.as_seconds(), 300)
+    def test_as_decimal_should_generate_decimal_if_only_seconds_given(self):
+        time = DisplayTime('300.05')
+        self.assertEqual(time.as_decimal(), Decimal('300.05'))
 
-    def test_as_seconds_should_return_an_empty_string_if_there_are_letters(self):
+    def test_as_decimal_should_return_an_empty_string_if_there_are_letters(self):
         time = DisplayTime('aab')
-        self.assertEqual(time.as_seconds(), '')
+        self.assertEqual(time.as_decimal(), '')
 
-    def test_as_seconds_should_return_an_empty_string_if_the_time_is_empty(self):
+    def test_as_decimal_should_return_an_empty_string_if_the_time_is_empty(self):
         time = DisplayTime('')
-        self.assertEqual(time.as_seconds(), '')
-
-
-class TestTracklist(TestCase):
-    def setUp(self):
-        _ = QApplication([])
-        self.uut = Tracklist(None)
-
-        self.uut.add_track()
-
-    def test_tracks_should_not_break_when_an_item_is_blank(self):
-        def mock_item(*_):
-            return QTableWidgetItem('')
-
-        self.uut.item = mock_item
-
-        tracks = self.uut.tracks
-        self.assertEqual(len(tracks), 0)
-
-    def test_tracks_should_return_a_track_with_a_zero_start_time(self):
-        def mock_item(_, column):
-            columns = self.uut.Columns
-            row = {
-                columns.url: QTableWidgetItem('youtube.com'),
-                columns.start_time: QTableWidgetItem('0'),
-                columns.full_song: QTableWidgetItem(False)
-            }
-
-            if column in row:
-                return row[column]
-            else:
-                return None
-
-        self.uut.item = mock_item
-        self.uut.rowCount = MagicMock(return_value=1)
-        self.assertTrue(len(self.uut.tracks) == 1)
+        self.assertEqual(time.as_decimal(), '')
 

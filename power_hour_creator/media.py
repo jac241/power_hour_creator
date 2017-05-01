@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 import attr
 import delegator
+from decimal import Decimal
 from youtube_dl import YoutubeDL
 
 from ffmpeg_normalize.__main__ import FFmpegNormalize
@@ -97,7 +98,7 @@ def build_audio_normalizer(media_files):
         # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
         '<input-file>': list(map(lambda f: f.output_path, media_files)),
         '--acodec': 'aac',
-        '--debug': True,
+        '--debug': False,
         '--dir': False,
         '--dry-run': False,
         '--ebu': False,
@@ -394,7 +395,11 @@ class Track:
     title = attr.ib()
     length = attr.ib(convert=str)
     full_song = attr.ib(default=False)
-    start_time = attr.ib(convert=int, default=30)
+    _start_time = attr.ib(convert=Decimal, default=30)
+
+    @property
+    def start_time(self):
+        return round(self._start_time, 3)
 
     @classmethod
     def from_ydl(cls, result):
