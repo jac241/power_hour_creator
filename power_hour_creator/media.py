@@ -66,6 +66,9 @@ class LocalMediaHandler:
             'duration': divmod(float(info['format']['duration']), 1)[0]
         }
 
+    def download(self, media_file, **_):
+        shutil.copyfile(media_file.track_url, media_file.download_path)
+
 
 class RemoteMediaDownloader:
     def __init__(self, options=None, remote_service_cls=YoutubeDL):

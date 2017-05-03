@@ -80,8 +80,9 @@ Feature: Create power hour
     When I add a local video to a power hour
     Then I should see that track's info
 
-  Scenario: I should be able to create a power hour with a local video
+  Scenario: I should be able to create a video power hour with a local video
     When I add a local video to a power hour
+    And I set track 1's start time to 0:00
     And I add 1 tracks to a power hour
     And I create a video power hour
     Then that video power hour should have been created
