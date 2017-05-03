@@ -372,7 +372,6 @@ class TracklistModel(QSqlTableModel):
 
 class Tracklist(QTableView):
 
-
     def __init__(self, parent):
         super().__init__(parent)
         self._setup_context_menu()

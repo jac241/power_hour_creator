@@ -1,31 +1,46 @@
+import os
 from collections import namedtuple
 from PyQt5.QtCore import QPoint
 from PyQt5.QtTest import QTest
 from PyQt5.Qt import Qt
 from behave import *
 
+from power_hour_creator.config import ROOT_DIR
 from power_hour_creator.media import TRACK_LENGTH
 from power_hour_creator.ui.tracklist import TracklistModel
+from tests.features.environment import SUPPORT_PATH
 
 Track = namedtuple('Track', 'url length')
-tracks = [
+remote_tracks = [
     Track('https://soundcloud.com/dan-weniger/dead-winter', 136),
     Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
 ]
 
-videos = [
+remote_videos = [
     Track('https://www.youtube.com/watch?v=XSVunk2LUAo', 202),
     Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
+]
+
+local_videos = [
+    Track(
+        url=os.path.join(SUPPORT_PATH, 'videos', "Beagle fires back at Kessel - 'I'm deeply hurt'.mp4"),
+        length=77
+    )
 ]
 
 
 @when('I add {num_tracks} tracks to a power hour')
 def step_impl(context, num_tracks):
     for track_num in range(int(num_tracks)):
-        add_song_to_tracklist(context)
+        add_remote_song_to_tracklist(context)
 
 
-def add_song_to_tracklist(context, full_song=False, video=False, pos=None):
+def add_remote_song_to_tracklist(context, full_song=False, video=False, pos=False):
+    tracks = remote_videos if video else remote_tracks
+    add_song_to_tracklist(context, tracks=tracks, full_song=full_song, pos=pos)
+
+
+def add_song_to_tracklist(context, tracks=remote_tracks, full_song=False, pos=None):
     viewport = context.main_window.tracklist.viewport()
 
     current_row = pos or context.num_tracks + 1
@@ -33,7 +48,7 @@ def add_song_to_tracklist(context, full_song=False, video=False, pos=None):
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
 
-    track = videos[context.num_tracks % len(videos)] if video else tracks[context.num_tracks % len(tracks)]
+    track = tracks[context.num_tracks % len(tracks)]
     context.last_track_added = track
 
     QTest.keyClicks(viewport.focusWidget(), track.url)
@@ -46,6 +61,10 @@ def add_song_to_tracklist(context, full_song=False, video=False, pos=None):
 
     context.num_tracks += 1
     context.prhr_length += track.length if full_song else TRACK_LENGTH
+
+
+def add_local_song_to_tracklist(context):
+    add_song_to_tracklist(context, tracks=local_videos)
 
 
 def tracklist_cell_pos(context, row, column):

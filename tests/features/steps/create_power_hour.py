@@ -20,8 +20,8 @@ from power_hour_creator.ui.tracklist import DisplayTime, \
 from power_hour_creator.media import TRACK_LENGTH, MediaFile
 from tests.features.environment import close_app, launch_app
 
-from tests.features.steps.global_steps import add_song_to_tracklist, tracklist_cell_pos
-
+from tests.features.steps.global_steps import add_remote_song_to_tracklist, \
+    tracklist_cell_pos, add_local_song_to_tracklist, local_videos
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 new_ph_name = "My Power Hour"
@@ -156,7 +156,7 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    add_song_to_tracklist(context, full_song=True)
+    add_remote_song_to_tracklist(context, full_song=True)
 
 
 @when("I add 2 videos to a video power hour with one full song")
@@ -164,8 +164,8 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    add_song_to_tracklist(context, video=True)
-    add_song_to_tracklist(context, full_song=True, video=True)
+    add_remote_song_to_tracklist(context, video=True)
+    add_remote_song_to_tracklist(context, full_song=True, video=True)
 
 
 @step("I create a video power hour")
@@ -219,7 +219,7 @@ def step_impl(context, pos):
     """
     :type context: behave.runner.Context
     """
-    add_song_to_tracklist(context, pos=int(pos))
+    add_remote_song_to_tracklist(context, pos=int(pos))
 
 
 @step("I choose to insert a row {direction} row {pos} with the context menu")
@@ -394,7 +394,7 @@ def step_impl(context):
     context.expected_message = "Here's the message"
     mock.side_effect = DownloadError(context.expected_message)
     context.main_window.tracklist_model._show_track_details = mock
-    add_song_to_tracklist(context)
+    add_remote_song_to_tracklist(context)
 
 
 @then("I should see a message in the status bar")
@@ -454,3 +454,23 @@ def step_impl(context):
     """
     assert_that(context.main_window.statusBar.currentMessage(), is_(''))
 
+
+@when("I add a local video to a power hour")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    add_local_song_to_tracklist(context)
+
+
+@then("I should see that track's info")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    model = context.tracklist.model()
+    track = model.tracks[0]
+    file = local_videos[0]
+    assert_that(track.url, is_(file.url))
+    assert_that(track.title, is_(os.path.split(file.url)[1]))
+    assert_that(track.length, is_(str(file.length)))

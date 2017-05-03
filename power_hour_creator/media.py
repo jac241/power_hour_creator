@@ -17,11 +17,123 @@ from power_hour_creator.resources import ffmpeg_dir, ffmpeg_exe, ffprobe_exe
 TRACK_LENGTH = 60
 
 
+@attr.s
+class Track:
+    url = attr.ib()
+    title = attr.ib()
+    length = attr.ib(convert=str)
+    full_song = attr.ib(default=False)
+    _start_time = attr.ib(convert=Decimal, default=30)
+
+    @property
+    def start_time(self):
+        return round(self._start_time, 3)
+
+    @classmethod
+    def from_ydl(cls, result):
+        url = result['webpage_url']
+        title = result['title']
+        length = result['duration'] if 'duration' in result else ''
+        return cls(url=url, title=title, length=length)
+
+    @classmethod
+    def from_record(cls, record):
+        return cls(
+            url=record.value("url"),
+            title=record.value("title"),
+            length=record.value("length"),
+            full_song=record.value("full_song"),
+            start_time=record.value("start_time")
+        )
+
+
+def find_track(url):
+    downloader = build_media_downloader(url)
+    service = FindMediaDescriptionService(url, downloader=downloader)
+    return service.execute()
+
+
+def build_media_downloader(url, options=None):
+    return LocalMediaHandler() if os.path.exists(url) else RemoteMediaDownloader(options)
+
+
+class LocalMediaHandler:
+    def extract_info(self, path):
+        info = MediaFile.read_info(path)
+        return {
+            'webpage_url': path,
+            'title': os.path.split(path)[1],
+            'duration': divmod(float(info['format']['duration']), 1)[0]
+        }
+
+
+class RemoteMediaDownloader:
+    def __init__(self, options=None, remote_service_cls=YoutubeDL):
+        self._options = options
+        self._remote_service_cls = remote_service_cls
+        self._logger = logging.getLogger(__name__)
+
+    def extract_info(self, url):
+        return self._remote_service_cls().extract_info(url, download=False)
+
+    def download(self, media_file, progress_listener):
+        self._build_remote_service(media_file, progress_listener) \
+            .download([media_file.track_url])
+
+    def _build_remote_service(self, media_file, progress_listener):
+        shared_opts = {
+            'ffmpeg_location': ffmpeg_dir(),
+            'verbose': True,
+            'outtmpl': os.path.splitext(media_file.download_path)[0] + '.%(ext)s',
+            '_logger': self._logger,
+            'progress_hooks': [progress_listener.on_download_progress],
+        }
+        if media_file.is_video:
+            more_opts = {
+                'format': '(mp4)[height<=720]',
+            }
+        else:
+            more_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'm4a',
+                    'preferredquality': '192'
+                }],
+            }
+
+        return self._remote_service_cls({**shared_opts, **more_opts})
+
+
+class FindMediaDescriptionService:
+    def __init__(self, url, downloader):
+        self._url = url
+        self._downloader = downloader
+
+    def execute(self):
+        self.ensure_url_is_valid()
+        return self.download_video_description()
+
+    def download_video_description(self):
+        result = self._downloader.extract_info(self._url)
+        return Track.from_ydl(result)
+
+    def ensure_url_is_valid(self):
+        if not self.url_is_present():
+            raise ValueError('URL is missing or blank')
+
+    def url_is_present(self):
+        return self._url and self._url.strip()
+
+
+PowerHour = namedtuple('PowerHour', 'tracks path is_video')
+
+
 class MediaFile:
     def __init__(self, track, position, directory, is_video):
         self.track = track
         self._position = position
-        self._directory = directory
+        self.directory = directory
         self.is_video = is_video
 
     @property
@@ -38,7 +150,7 @@ class MediaFile:
 
     @property
     def download_path(self):
-        return os.path.join(self._directory, '{:05d}.{}'.format(self._position + 1, self.extension))
+        return os.path.join(self.directory, '{:05d}.{}'.format(self._position + 1, self.extension))
 
     @property
     def normalized_path(self):
@@ -75,55 +187,6 @@ class MediaFile:
         return json.loads(output)
 
 
-def get_audio_downloader(progress_listener, download_dir, logger):
-    audio_opts = {
-        'ffmpeg_location': ffmpeg_dir(),
-        'verbose': True,
-        'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
-        'format': 'bestaudio/best',
-        '_logger': logger,
-        'progress_hooks': [progress_listener.on_download_progress],
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'm4a',
-            'preferredquality': '192'
-        }],
-    }
-    return YoutubeDL(audio_opts)
-
-
-def build_audio_normalizer(media_files):
-    args = {
-        # map has no len, so we have to make it a list
-        # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
-        '<input-file>': list(map(lambda f: f.output_path, media_files)),
-        '--acodec': 'aac',
-        '--debug': False,
-        '--dir': False,
-        '--dry-run': False,
-        '--ebu': False,
-        '--extra-options': '-b:a 192k -ar 44100',
-        '--force': True,
-        '--format': 'wav',
-        '--level': '-26',
-        '--max': False,
-        '--merge': True,
-        '--no-prefix': False,
-        '--prefix': 'normalized',
-        '--threshold': '0.5',
-        '--verbose': False,
-    }
-
-    return FFmpegNormalize(args)
-
-
-def normalize_audio(media_files):
-    build_audio_normalizer(media_files).run()
-
-    for media_file in media_files:
-        shutil.copyfile(media_file.normalized_path, media_file.output_path)
-
-
 class CreatePowerHourService:
     def __init__(self, power_hour, progress_listener):
         self._power_hour = power_hour
@@ -137,7 +200,6 @@ class CreatePowerHourService:
             self._logger.debug("ffmpeg found: %s", os.path.exists(ffmpeg_dir()))
 
             processor = self._build_media_processor(download_dir)
-
             try:
                 media_files = []
                 for index, track in enumerate(self._power_hour.tracks):
@@ -153,6 +215,12 @@ class CreatePowerHourService:
                         is_video=self._power_hour.is_video
                     )
 
+                    downloader = build_media_downloader(media_file.track_url)
+                    downloader.download(
+                        media_file=media_file,
+                        progress_listener=self._progress_listener
+                    )
+
                     processor.process_file(media_file)
                     media_files.append(media_file)
 
@@ -160,8 +228,8 @@ class CreatePowerHourService:
                     normalize_audio(media_files)
 
                 if not self._is_cancelled:
-                    ouput_paths = list(map(lambda f: f.output_path, media_files))
-                    processor.merge_files_into_power_hour(ouput_paths, self._power_hour.path)
+                    output_paths = list(map(lambda f: f.output_path, media_files))
+                    processor.merge_files_into_power_hour(output_paths, self._power_hour.path)
 
                 if self._is_cancelled:  # can be cancelled at any time
                     self._handle_cancellation()
@@ -173,35 +241,15 @@ class CreatePowerHourService:
                 self._progress_listener.on_service_error(str(e))
 
     def _build_media_processor(self, download_dir):
-        shared_opts = {
-            'ffmpeg_location': ffmpeg_dir(),
-            'verbose': True,
-            'outtmpl': os.path.join(download_dir, '%(autonumber)s.%(ext)s'),
-            '_logger': self._logger,
-            'progress_hooks': [self._progress_listener.on_download_progress],
-        }
         if self._power_hour.is_video:
-            video_opts = {
-                'format': '(mp4)[height<=720]',
-            }
             return VideoProcessor(
                 download_dir=download_dir,
                 progress_listener=self._progress_listener,
-                downloader=YoutubeDL({**shared_opts, **video_opts})
             )
         else:
-            audio_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'm4a',
-                    'preferredquality': '192'
-                }],
-            }
             return AudioProcessor(
                 download_dir=download_dir,
                 progress_listener=self._progress_listener,
-                downloader=YoutubeDL({**shared_opts, **audio_opts})
             )
 
     def cancel(self):
@@ -215,23 +263,18 @@ class CreatePowerHourService:
 
 
 class MediaProcessor:
-    def __init__(self, download_dir, progress_listener, downloader):
+    def __init__(self, download_dir, progress_listener):
         self._download_dir = download_dir
         self._progress_listener = progress_listener
-        self._downloader = downloader
         self._logger = logging.getLogger(__name__)
 
     def process_file(self, media_file):
-        self._downloader.download([media_file.track_url])
-        self.after_download(media_file)
-
-    def after_download(self, media_file):
         raise NotImplementedError
 
 
 class AudioProcessor(MediaProcessor):
 
-    def after_download(self, media_file):
+    def process_file(self, media_file):
         if media_file.should_be_shortened:
             self._shorten_to_one_minute(media_file)
         else:
@@ -283,7 +326,7 @@ class AudioProcessor(MediaProcessor):
 
 class VideoProcessor(MediaProcessor):
 
-    def after_download(self, media_file):
+    def process_file(self, media_file):
         self._prepare_files_for_merge(media_file)
 
     def merge_files_into_power_hour(self, output_files, power_hour_path):
@@ -389,60 +432,33 @@ class VideoProcessor(MediaProcessor):
         shutil.copyfile(media_file.download_path, media_file.output_path)
 
 
-@attr.s
-class Track:
-    url = attr.ib()
-    title = attr.ib()
-    length = attr.ib(convert=str)
-    full_song = attr.ib(default=False)
-    _start_time = attr.ib(convert=Decimal, default=30)
+def normalize_audio(media_files):
+    build_audio_normalizer(media_files).run()
 
-    @property
-    def start_time(self):
-        return round(self._start_time, 3)
-
-    @classmethod
-    def from_ydl(cls, result):
-        url = result['webpage_url']
-        title = result['title']
-        length = result['duration'] if 'duration' in result else ''
-        return cls(url=url, title=title, length=length)
-
-    @classmethod
-    def from_record(cls, record):
-        return cls(
-            url=record.value("url"),
-            title=record.value("title"),
-            length=record.value("length"),
-            full_song=record.value("full_song"),
-            start_time=record.value("start_time")
-        )
+    for media_file in media_files:
+        shutil.copyfile(media_file.normalized_path, media_file.output_path)
 
 
-class FindMediaDescriptionService:
-    def __init__(self, url, downloader):
-        self._url = url
-        self._downloader = downloader
+def build_audio_normalizer(media_files):
+    args = {
+        # map has no len, so we have to make it a list
+        # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
+        '<input-file>': list(map(lambda f: f.output_path, media_files)),
+        '--acodec': 'aac',
+        '--debug': False,
+        '--dir': False,
+        '--dry-run': False,
+        '--ebu': False,
+        '--extra-options': '-b:a 192k -ar 44100',
+        '--force': True,
+        '--format': 'wav',
+        '--level': '-26',
+        '--max': False,
+        '--merge': True,
+        '--no-prefix': False,
+        '--prefix': 'normalized',
+        '--threshold': '0.5',
+        '--verbose': False,
+    }
 
-    def execute(self):
-        self.ensure_url_is_valid()
-        return self.download_video_description()
-
-    def download_video_description(self):
-        result = self._downloader.extract_info(self._url, download=False)
-        return Track.from_ydl(result)
-
-    def ensure_url_is_valid(self):
-        if not self.url_is_present():
-            raise ValueError('URL is missing or blank')
-
-    def url_is_present(self):
-        return self._url and self._url.strip()
-
-
-def find_track(url):
-    service = FindMediaDescriptionService(url, downloader=YoutubeDL())
-    return service.execute()
-
-
-PowerHour = namedtuple('PowerHour', 'tracks path is_video')
+    return FFmpegNormalize(args)

@@ -75,3 +75,14 @@ Feature: Create power hour
     Then I should see that the export is cancelling
     And that power hour should have been cancelled
     And I should not see the power hour created message
+
+  Scenario: I should be able to view a local track's info
+    When I add a local video to a power hour
+    Then I should see that track's info
+
+  Scenario: I should be able to create a power hour with a local video
+    When I add a local video to a power hour
+    And I add 1 tracks to a power hour
+    And I create a video power hour
+    Then that video power hour should have been created
+
