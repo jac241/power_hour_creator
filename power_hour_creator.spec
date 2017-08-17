@@ -2,12 +2,22 @@
 
 block_cipher = None
 
+import os
+import platform
+
+pathex = os.getcwd()
+
+options = {
+  'Windows': 'ffmpeg-3.2.2-win32-static',
+  'Darwin': 'mac'
+}
+ext_dir = 'ext/' + options.get(platform.system())
 
 a = Analysis(['power_hour_creator-runner.py'],
-             pathex=['C:\\Users\\jac24\\git\\jac241\\power_hour_creator'],
+             pathex=[pathex],
              binaries=[],
              datas=[
-                ('ext', 'ext'),
+                (ext_dir, ext_dir),
                 ('power_hour_creator/db', 'power_hour_creator/db'),
                 ('assets', 'assets')],
              hiddenimports=[],
@@ -29,3 +39,8 @@ exe = EXE(pyz,
           strip=False,
           upx=True,
           console=False )
+
+app = BUNDLE(exe,
+             name='power_hour_creator.app',
+             icon=None,
+             bundle_identifier=None)

@@ -1,0 +1,12 @@
+appdirs
+attrs
+youtube_dl>=2017.8.13
+pydub
+PyQt5
+PyInstaller
+furl
+behave
+QDarkStyle
+pyhamcrest
+delegator.py
+psutil==5.2.2
