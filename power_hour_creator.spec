@@ -4,8 +4,9 @@ block_cipher = None
 
 import os
 import platform
+from distutils.sysconfig import get_python_lib
 
-pathex = os.getcwd()
+pathex = [os.getcwd()]
 
 options = {
   'Windows': 'ffmpeg-3.2.2-win32-static',
@@ -13,8 +14,14 @@ options = {
 }
 ext_dir = 'ext/' + options.get(platform.system())
 
+if platform.system() == 'Windows':
+    pathex = pathex + [
+        get_python_lib() + '\\PyQt5\\Qt\\bin',
+        "C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x86"
+    ]
+
 a = Analysis(['power_hour_creator-runner.py'],
-             pathex=[pathex],
+             pathex=pathex,
              binaries=[],
              datas=[
                 (ext_dir, ext_dir),
