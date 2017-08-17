@@ -34,11 +34,6 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self._connect_power_hour_list_view()
         self.setWindowIcon(QIcon(image_path('Beer-80.png')))
 
-    def _setup_tracklist(self):
-        self._setup_tracklist_model()
-        self._setup_tracklist_delegate()
-        self._setup_tracklist_appearance()
-
     def _setup_power_hour_list_view(self):
         self.power_hour_model = PowerHourModel(self)
         self.power_hour_model.setTable('power_hours')
@@ -50,17 +45,10 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
 
         self.power_hour_model.rowsInserted.connect(self.powerHoursListView.select_new_power_hour)
 
-    def _setup_tracklist_delegate(self):
-        delegate = TrackDelegate(
-            read_only_columns=self.tracklist_model.Columns.read_only,
-            time_columns=self.tracklist_model.Columns.time,
-            boolean_columns=self.tracklist_model.Columns.checkbox
-        )
-        self.tracklist.setItemDelegate(delegate)
-
-    def _setup_tracklist_appearance(self):
-        self.tracklist.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
+    def _setup_tracklist(self):
+        self._setup_tracklist_model()
+        self._setup_tracklist_delegate()
+        self._setup_tracklist_appearance()
 
     def _setup_tracklist_model(self):
         self.tracklist_model = TracklistModel(self)
@@ -78,6 +66,18 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.tracklist.hideColumn(0)  # id
         self.tracklist.hideColumn(1)  # position
         self.tracklist.hideColumn(7)  # power_hour_id
+
+    def _setup_tracklist_delegate(self):
+        delegate = TrackDelegate(
+            read_only_columns=self.tracklist_model.Columns.read_only,
+            time_columns=self.tracklist_model.Columns.time,
+            boolean_columns=self.tracklist_model.Columns.checkbox
+        )
+        self.tracklist.setItemDelegate(delegate)
+
+    def _setup_tracklist_appearance(self):
+        self.tracklist.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch)
 
     def _connect_create_power_hour_button(self):
         self.createPowerHourButton.clicked.connect(self._export_power_hour)

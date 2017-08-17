@@ -298,7 +298,7 @@ class AudioProcessor(MediaProcessor):
             '-nostdin',
             power_hour_path
         ]
-        pass
+
         self._logger.info('Merging into power hour with command: {}'.format(" ".join(cmd)))
 
         if platform.system() == 'Windows':
