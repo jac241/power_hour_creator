@@ -10,6 +10,7 @@ import attr
 import delegator
 from decimal import Decimal
 from youtube_dl import YoutubeDL
+import platform
 
 from ffmpeg_normalize.__main__ import FFmpegNormalize
 from power_hour_creator.resources import ffmpeg_dir, ffmpeg_exe, ffprobe_exe
@@ -299,7 +300,11 @@ class AudioProcessor(MediaProcessor):
         ]
         pass
         self._logger.info('Merging into power hour with command: {}'.format(" ".join(cmd)))
-        p = delegator.run(cmd)
+
+        if platform.system() == 'Windows':
+            process = delegator.run(cmd)
+        else:
+            subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def _shorten_to_one_minute(self, media_file):
         cmd = [

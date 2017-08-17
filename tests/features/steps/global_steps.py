@@ -23,8 +23,8 @@ remote_videos = [
 
 local_videos = [
     Track(
-        url=os.path.join(SUPPORT_PATH, 'videos', "Beagle fires back at Kessel - 'I'm deeply hurt'.mp4"),
-        length=77
+        url=os.path.join(SUPPORT_PATH, 'videos', "cc_roller_coaster.mp4"),
+        length=32
     )
 ]
 
@@ -60,7 +60,7 @@ def add_song_to_tracklist(context, tracks=remote_tracks, full_song=False, pos=No
         QTest.keyClick(viewport.focusWidget(), Qt.Key_Down)
 
     context.num_tracks += 1
-    context.prhr_length += track.length if full_song else TRACK_LENGTH
+    context.prhr_length += track.length if full_song or track.length < 60 else TRACK_LENGTH
 
 
 def add_local_song_to_tracklist(context):

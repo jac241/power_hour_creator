@@ -190,9 +190,14 @@ def migrate_database():
 
 
 def setup_database():
+    ensure_db_folder_exists()
     connect_to_db()
     ensure_migrations_table_exists()
     migrate_database()
+
+
+def ensure_db_folder_exists():
+    os.makedirs(config.APP_DIRS.user_data_dir, exist_ok=True)
 
 
 def bootstrap_app():

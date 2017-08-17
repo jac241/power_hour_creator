@@ -64,6 +64,9 @@ def clean_database():
 
 def delete_database():
     if 'test' in config.db_path():
-        os.remove(config.db_path())
+        try:
+            os.remove(config.db_path())
+        except OSError:
+            pass
 
 

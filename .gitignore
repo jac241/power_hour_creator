@@ -91,3 +91,6 @@ ENV/
 *.aac
 *.mp4
 *.m4a
+
+# Mac crap
+*.DS_STORE
