@@ -51,3 +51,20 @@ app = BUNDLE(exe,
              name='power_hour_creator.app',
              icon=None,
              bundle_identifier=None)
+
+folder_exe = EXE(pyz,
+                 a.scripts,
+                 exclude_binaries=True,
+                 name='power_hour_creator',
+                 debug=False,
+                 strip=False,
+                 upx=True,
+                 console=False )
+
+coll = COLLECT(folder_exe,
+               a.binaries,
+               a.zipfiles,
+               a.datas,
+               strip=False,
+               upx=True,
+               name='Power Hour Creator')

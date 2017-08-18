@@ -94,3 +94,6 @@ ENV/
 
 # Mac crap
 *.DS_STORE
+
+# Inno Setup
+/Output
