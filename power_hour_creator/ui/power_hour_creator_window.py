@@ -113,7 +113,8 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
             power_hour = PowerHour(
                 self.tracklist_model.tracks,
                 power_hour_path,
-                is_video
+                is_video,
+                self._current_power_hour_name()
             )
 
             thread = PowerHourExportThread(self, power_hour)
@@ -176,24 +177,27 @@ class PowerHourCreatorWindow(QMainWindow, Ui_mainWindow):
         self.powerHoursListView.selectionModel().currentRowChanged.connect(show_this_power_hours_tracks)
         self.powerHoursListView.model().dataChanged.connect(show_renamed_power_hour_name)
 
+    def _current_power_hour_name(self):
+        return self.powerHourNameLabel.text()
+
 
 class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
 
     DOT_BLINK_TIME_IN_MS = 250
 
     def __init__(self, parent, power_hour):
-        QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent, Qt.WindowTitleHint)
         Ui_PowerHourExportDialog.__init__(self)
-        self.setupUi(self)
-
         self._power_hour = power_hour
 
+        self.setupUi(self)
         self._setup_signals()
         self._setup_progress_bar()
 
     def setupUi(self, ui):
         super().setupUi(ui)
         self.cancellingLabel.hide()
+        self.setWindowTitle('Exporting: {}'.format(self._power_hour.name))
 
     def _setup_progress_bar(self):
         self.overallProgressBar.setMaximum(len(self._power_hour.tracks))

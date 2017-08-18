@@ -130,7 +130,7 @@ class FindMediaDescriptionService:
         return self._url and self._url.strip()
 
 
-PowerHour = namedtuple('PowerHour', 'tracks path is_video')
+PowerHour = namedtuple('PowerHour', 'tracks path is_video name')
 
 
 class MediaFile:
