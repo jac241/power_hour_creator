@@ -3,10 +3,8 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore
 
-from power_hour_creator.ui.power_hour_list import PowerHourModel
-from power_hour_creator.ui.tracklist import TracklistModel
+from power_hour_creator.ui.main_window import build_main_window
 from .boot import bootstrap_app
-from .ui.main_window import MainWindow
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -29,10 +27,7 @@ def launch_app():
     logger.info("Launching GUI")
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     logger.info("Showing main window")
-    app.main_window = MainWindow(
-        power_hour_model=PowerHourModel(parent=app),
-        tracklist_model=TracklistModel(parent=app)
-    )
+    app.main_window = build_main_window(app)
     app.main_window.show()
     return app
 

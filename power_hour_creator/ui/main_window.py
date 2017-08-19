@@ -1,5 +1,6 @@
 import os
 
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox
 
@@ -8,7 +9,8 @@ from power_hour_creator.media import PowerHour
 from power_hour_creator.resources import image_path
 from power_hour_creator.ui.exporting import export_power_hour_in_background, \
     get_power_hour_export_path
-from power_hour_creator.ui.tracklist import TrackDelegate
+from power_hour_creator.ui.power_hour_list import PowerHourModel
+from power_hour_creator.ui.tracklist import TrackDelegate, TracklistModel
 from .forms.mainwindow import Ui_mainWindow
 
 ERROR_DISPLAY_TIME_IN_MS = 5000
@@ -17,10 +19,13 @@ CREATED_DISPLAY_TIME_IN_MS = 10000
 
 class MainWindow(QMainWindow, Ui_mainWindow):
 
-    def __init__(self, power_hour_model, tracklist_model):
+    def __init__(self, power_hour_model, tracklist_model, tracklist_delegate,
+                 track_error_dispatcher):
         super().__init__()
         self.power_hour_model = power_hour_model
         self.tracklist_model = tracklist_model
+        self.tracklist_delegate = tracklist_delegate
+        self.track_error_dispatcher = track_error_dispatcher
 
         self.setupUi(self)
         self._setup_power_hour_list_view()
@@ -51,12 +56,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tracklist.hideColumn(7)  # power_hour_id
 
     def _setup_tracklist_delegate(self):
-        delegate = TrackDelegate(
-            read_only_columns=self.tracklist_model.Columns.read_only,
-            time_columns=self.tracklist_model.Columns.time,
-            boolean_columns=self.tracklist_model.Columns.checkbox
-        )
-        self.tracklist.setItemDelegate(delegate)
+        self.tracklist.setItemDelegate(self.tracklist_delegate)
 
     def _setup_tracklist_appearance(self):
         self.tracklist\
@@ -70,6 +70,23 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tracklist_model\
             .error_downloading\
             .connect(self._show_error_downloading)
+
+        self.track_error_dispatcher\
+            .track_invalid\
+            .connect(self._show_track_error)
+
+    def _show_error_downloading(self, url, error_message):
+        self.statusBar.showMessage(
+            'Error downloading "{}": {}'.format(url, error_message),
+            ERROR_DISPLAY_TIME_IN_MS
+        )
+
+    def _show_track_error(self, error):
+        self.statusBar.showMessage(
+            "Error: Start time {} is greater than the track's length"
+                .format(error['start_time']),
+            ERROR_DISPLAY_TIME_IN_MS
+        )
 
     def _enable_create_power_hour_button_when_tracks_present(self):
         self.tracklist_model\
@@ -85,12 +102,6 @@ class MainWindow(QMainWindow, Ui_mainWindow):
     def _try_to_enable_create_button_on_tracklist_change(self):
         self.createPowerHourButton.setEnabled(self.tracklist_model.has_tracks())
 
-    def _show_error_downloading(self, url, error_message):
-        self.statusBar.showMessage(
-            'Error downloading "{}": {}'.format(url, error_message),
-            ERROR_DISPLAY_TIME_IN_MS
-        )
-
     def _show_worker_error(self, message):
         msg = QMessageBox(self)
         msg.setText('Error occured')
@@ -98,8 +109,10 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         msg.show()
 
     def _export_power_hour(self):
-        power_hour_path = \
-            get_power_hour_export_path(parent=self, is_video=self._is_video_power_hour())
+        power_hour_path = get_power_hour_export_path(
+            parent=self,
+            is_video=self._is_video_power_hour()
+        )
 
         if power_hour_path:
 
@@ -156,3 +169,20 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _current_power_hour_name(self):
         return self.powerHourNameLabel.text()
+
+
+class TrackErrorDispatch(QObject):
+    track_invalid = pyqtSignal(dict)
+
+
+def build_main_window(parent):
+    track_error_dispatcher = TrackErrorDispatch()
+    return MainWindow(
+        power_hour_model=PowerHourModel(parent=parent),
+        tracklist_model=TracklistModel(parent=parent),
+        tracklist_delegate=TrackDelegate(
+            track_error_dispatcher=track_error_dispatcher
+        ),
+        track_error_dispatcher=track_error_dispatcher
+    )
+

@@ -9,4 +9,5 @@ behave==1.2.5
 pyhamcrest==1.9.0
 delegator.py=0.0.10
 psutil==5.2.2
+factory_boy==2.9.2
 pypiwin32; sys_platform='win32'

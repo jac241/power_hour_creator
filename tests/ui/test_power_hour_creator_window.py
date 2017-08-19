@@ -4,13 +4,13 @@ from PyQt5.QtWidgets import QApplication
 
 from power_hour_creator.media import PowerHour
 from power_hour_creator.ui.exporting import ExportPowerHourDialog
+from tests.ui.support import QtTestCase
 
 
-class TestExportPowerHourDialog(TestCase):
+class TestExportPowerHourDialog(QtTestCase):
 
     def setUp(self):
         super().setUp()
-        self.qt_app = QApplication([])
 
         self.power_hour_name = 'MyPowerHour'
         self.power_hour = PowerHour(

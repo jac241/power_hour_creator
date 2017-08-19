@@ -1,13 +1,14 @@
 import os
 from collections import namedtuple
-from PyQt5.QtCore import QPoint
-from PyQt5.QtTest import QTest
+
 from PyQt5.Qt import Qt
+from PyQt5.QtTest import QTest
 from behave import *
 
-from power_hour_creator.config import ROOT_DIR, track_length
+from power_hour_creator.config import track_length
 from power_hour_creator.ui.tracklist import TracklistModel
 from tests.features.environment import SUPPORT_PATH
+from tests.features.models import tracklist_cell_pos
 
 Track = namedtuple('Track', 'url length')
 remote_tracks = [
@@ -27,7 +28,6 @@ local_videos = [
     )
 ]
 
-
 @when('I add {num_tracks} tracks to a power hour')
 def step_impl(context, num_tracks):
     for track_num in range(int(num_tracks)):
@@ -40,15 +40,18 @@ def add_remote_song_to_tracklist(context, full_song=False, video=False, pos=Fals
 
 
 def add_song_to_tracklist(context, tracks=remote_tracks, full_song=False, pos=None):
+    track = tracks[context.num_tracks % len(tracks)]
+    context.last_track_added = track
+    context.tracklist_test_model.add_track(track)
+
     viewport = context.main_window.tracklist.viewport()
 
-    current_row = pos or context.num_tracks + 1
+    # current_row = pos or context.num_tracks + 1
+    current_row = pos or context.tracklist_test_model.number_of_tracks()
     url_cell_pos = tracklist_cell_pos(context, row=current_row, column=TracklistModel.Columns.url)
 
     QTest.mouseClick(viewport, Qt.LeftButton, pos=url_cell_pos)
 
-    track = tracks[context.num_tracks % len(tracks)]
-    context.last_track_added = track
 
     QTest.keyClicks(viewport.focusWidget(), track.url)
     QTest.keyClick(viewport.focusWidget(), Qt.Key_Return)
@@ -66,10 +69,3 @@ def add_local_song_to_tracklist(context):
     add_song_to_tracklist(context, tracks=local_videos)
 
 
-def tracklist_cell_pos(context, row, column):
-    tracklist = context.main_window.tracklist
-
-    return QPoint(
-        tracklist.columnViewportPosition(column),
-        tracklist.rowViewportPosition(row)
-    )

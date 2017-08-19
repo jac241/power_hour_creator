@@ -61,12 +61,41 @@ class DisplayTime:
         return type(self._time) != str
 
 
+class ValidationError(ValueError):
+    def __init__(self, params):
+        self.params = params
+
+
+class StartTimeValidator():
+    def __init__(self, model_index):
+        self._model_index = model_index
+
+    def validate(self, start_time):
+        if start_time.strip() == '':
+            return
+
+        self._ensure_start_time_less_than_track_length(start_time)
+
+    def _ensure_start_time_less_than_track_length(self, start_time):
+        track_length = self._model_index.sibling(
+            self._model_index.row(),
+            TracklistModel.Columns.length
+        ).data(Qt.DisplayRole)
+
+        if not DisplayTime(start_time).as_decimal() < track_length:
+            raise ValidationError(params={
+                'code': 'start_time_too_late',
+                'start_time': start_time
+            })
+
+
 class TrackDelegate(QItemDelegate):
-    def __init__(self, read_only_columns, time_columns, boolean_columns, parent=None):
+    def __init__(self, track_error_dispatcher, parent=None):
         super().__init__(parent)
-        self._read_only_columns = read_only_columns
-        self._time_columns = time_columns
-        self._boolean_columns = boolean_columns
+        self._read_only_columns=TracklistModel.Columns.read_only
+        self._time_columns=TracklistModel.Columns.time
+        self._boolean_columns=TracklistModel.Columns.checkbox
+        self._track_error_dispatcher = track_error_dispatcher
 
     def paint(self, painter, option, index):
         if self._column_is_time_column_and_has_data(index):
@@ -115,7 +144,13 @@ class TrackDelegate(QItemDelegate):
             super().setEditorData(editor, index)
 
     def setModelData(self, editor, model, index):
-        if self._column_is_time_column_and_has_data(index):
+        if index.column() == TracklistModel.Columns.start_time:
+            try:
+                StartTimeValidator(index).validate(editor.text())
+            except ValidationError as e:
+                self._track_error_dispatcher.track_invalid.emit(e.params)
+                model.setData(index, '')
+                return
             model.setData(index, str(DisplayTime(editor.text()).as_decimal()))
         elif index.column() in self._boolean_columns:
             value = True if editor.itemData(editor.currentIndex()) else False

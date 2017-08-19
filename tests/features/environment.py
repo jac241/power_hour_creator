@@ -7,6 +7,8 @@ import power_hour_creator.config
 from power_hour_creator import power_hour_creator, config, boot, media
 from PyQt5.QtTest import QTest
 
+from tests.features.models import TracklistTestModel
+
 SUPPORT_PATH = os.path.join(config.ROOT_DIR, "..", "tests", "support")
 
 def before_all(context):
@@ -25,6 +27,7 @@ def before_scenario(context, scenario):
     context.support_path = SUPPORT_PATH
     context.num_tracks = 0
     context.prhr_length = 0
+    context.tracklist_test_model = TracklistTestModel(context)
     QTest.qWaitForWindowActive(context.main_window)
 
 

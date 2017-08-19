@@ -21,7 +21,8 @@ from power_hour_creator.ui.tracklist import DisplayTime, \
     DEFAULT_NUM_TRACKS, TracklistModel
 from tests.features.environment import close_app, launch_app
 from tests.features.steps.global_steps import add_remote_song_to_tracklist, \
-    tracklist_cell_pos, add_local_song_to_tracklist, local_videos
+    add_local_song_to_tracklist, local_videos
+from tests.features.models import tracklist_cell_pos
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 new_ph_name = "My Power Hour"

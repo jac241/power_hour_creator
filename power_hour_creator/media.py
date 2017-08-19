@@ -19,11 +19,13 @@ from power_hour_creator.resources import ffmpeg_dir, ffmpeg_exe, ffprobe_exe
 
 @attr.s
 class Track:
+    DEFAULT_START_TIME = 0
+
     url = attr.ib()
     title = attr.ib()
     length = attr.ib(convert=str)
     full_song = attr.ib(default=False)
-    _start_time = attr.ib(convert=Decimal, default=30)
+    _start_time = attr.ib(convert=Decimal, default=DEFAULT_START_TIME)
 
     @property
     def start_time(self):
