@@ -183,8 +183,19 @@ class TracklistModel(QSqlTableModel):
         super().__init__(parent, db, *args, **kwargs)
         self.current_power_hour_id = None
 
+        self.setTable("tracks")
+        self.setEditStrategy(QSqlTableModel.OnFieldChange)
+
+        self.setHeaderData(self.Columns.url, Qt.Horizontal, "URL")
+        self.setHeaderData(self.Columns.title, Qt.Horizontal, "Title")
+        self.setHeaderData(self.Columns.length, Qt.Horizontal, "Duration")
+        self.setHeaderData(self.Columns.start_time, Qt.Horizontal, "Start Time")
+        self.setHeaderData(self.Columns.full_song, Qt.Horizontal, "Full Song?")
+
         self.setSort(self.Columns.position, Qt.AscendingOrder)
         self.dataChanged.connect(self._handle_data_change)
+
+        self.select()
 
     def _handle_data_change(self, top_left_index, *_):
         column = top_left_index.column()

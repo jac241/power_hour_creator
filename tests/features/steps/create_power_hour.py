@@ -13,7 +13,9 @@ from behave import *
 from hamcrest import *
 from youtube_dl import DownloadError
 
+from power_hour_creator import config
 from power_hour_creator.media import MediaFile
+from power_hour_creator.ui import exporting, main_window
 from power_hour_creator.ui.exporting import ExportPowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime, \
     DEFAULT_NUM_TRACKS, TracklistModel
@@ -31,10 +33,14 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
 
-    context.export_path = os.path.join(context.support_path, 'exports/test.m4a')
+    context.export_path = os.path.join(
+        context.support_path,
+        'exports',
+        'test.{}'.format(config.AUDIO_FORMAT)
+    )
 
-    context.main_window.get_power_hour_path = Mock()
-    context.main_window.get_power_hour_path.return_value = context.export_path
+    main_window.get_power_hour_export_path = Mock()
+    main_window.get_power_hour_export_path.return_value = context.export_path
 
     QTest.mouseClick(context.main_window.createPowerHourButton, Qt.LeftButton)
 
@@ -173,10 +179,14 @@ def step_impl(context):
     """
     context.main_window.videoCheckBox.setCheckState(Qt.Checked)
 
-    context.export_path = os.path.join(context.support_path, 'exports/test.mp4')
+    context.export_path = os.path.join(
+        context.support_path,
+        'exports',
+        'test.{}'.format(config.VIDEO_FORMAT)
+    )
 
-    context.main_window.get_power_hour_path = Mock()
-    context.main_window.get_power_hour_path.return_value = context.export_path
+    main_window.get_power_hour_export_path = Mock()
+    main_window.get_power_hour_export_path.return_value = context.export_path
 
     QTest.mouseClick(context.main_window.createPowerHourButton, Qt.LeftButton)
 

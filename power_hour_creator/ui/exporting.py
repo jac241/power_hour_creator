@@ -1,6 +1,9 @@
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
-from PyQt5.QtWidgets import QDialog
+import os
 
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
+from PyQt5.QtWidgets import QDialog, QFileDialog
+
+from power_hour_creator import config
 from power_hour_creator.media import PowerHourExportService
 from power_hour_creator.ui.forms.power_hour_export_dialog import \
     Ui_PowerHourExportDialog
@@ -113,3 +116,35 @@ class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
             self.currentSongProgressBar.setMaximum(total_bytes)
 
         self.currentSongProgressBar.setValue(downloaded_bytes)
+
+
+def export_power_hour_in_background(power_hour,
+                                    parent_widget,
+                                    export_progress_view):
+    thread = PowerHourExportThread(parent_widget, power_hour)
+    progress_dialog = ExportPowerHourDialog(parent_widget, power_hour)
+    progress_dialog.cancelButton.clicked.connect(thread.cancel_export)
+
+    thread.progress.connect(progress_dialog.overallProgressBar.setValue)
+    thread.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
+    thread.track_download_progress.connect(progress_dialog.show_track_download_progress)
+    thread.error.connect(export_progress_view._show_worker_error)
+    thread.finished.connect(progress_dialog.close)
+    thread.power_hour_created.connect(export_progress_view._show_power_hour_created)
+    thread.finished.connect(thread.deleteLater)
+
+    progress_dialog.show()
+    thread.start()
+
+
+def get_power_hour_export_path(parent, is_video):
+    if is_video:
+        file_description = 'Video (*.{})'.format(config.VIDEO_FORMAT)
+        return QFileDialog.getSaveFileName(parent, "Export Power Hour",
+                                           os.path.expanduser('~/Videos'),
+                                           file_description)[0]
+    else:
+        file_description = 'Audio (*.{})'.format(config.AUDIO_FORMAT)
+        return QFileDialog.getSaveFileName(parent, "Export Power Hour",
+                                           os.path.expanduser('~/Music'),
+                                           file_description)[0]

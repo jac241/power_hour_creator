@@ -4,7 +4,7 @@ import glob
 from PyQt5.QtSql import QSqlQuery
 
 import power_hour_creator.config
-from power_hour_creator import power_hour_creator, config, boot
+from power_hour_creator import power_hour_creator, config, boot, media
 from PyQt5.QtTest import QTest
 
 SUPPORT_PATH = os.path.join(config.ROOT_DIR, "..", "tests", "support")
@@ -20,6 +20,7 @@ def after_step(context, step):
 
 def before_scenario(context, scenario):
     config.phc_env = 'test'
+
     launch_app(context)
     context.support_path = SUPPORT_PATH
     context.num_tracks = 0
@@ -45,8 +46,13 @@ def close_app(context):
 
 
 def delete_export_files(context):
-    for ext in ['m4a', 'mp4']:
-        export_files = glob.glob(os.path.join(context.support_path, "exports/*.{}".format(ext)))
+    for ext in [config.AUDIO_FORMAT, config.VIDEO_FORMAT]:
+        export_files = glob.glob(
+            os.path.join(
+                context.support_path,
+                "exports/*.{}".format(ext)
+            )
+        )
         for f in export_files:
             os.remove(f)
 

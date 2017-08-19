@@ -1,21 +1,20 @@
 import json
 import logging
 import os
+import platform
 import shutil
 import subprocess
 from collections import namedtuple
+from decimal import Decimal
 from tempfile import TemporaryDirectory
 
 import attr
 import delegator
-from decimal import Decimal
 from youtube_dl import YoutubeDL
-import platform
 
 from ffmpeg_normalize.__main__ import FFmpegNormalize
+from power_hour_creator import config
 from power_hour_creator.resources import ffmpeg_dir, ffmpeg_exe, ffprobe_exe
-
-TRACK_LENGTH = 60
 
 
 @attr.s
@@ -94,14 +93,14 @@ class RemoteMediaDownloader:
         }
         if media_file.is_video:
             more_opts = {
-                'format': '(mp4)[height<=720]',
+                'format': '({})[height<=720]'.format(config.VIDEO_FORMAT),
             }
         else:
             more_opts = {
                 'format': 'bestaudio/best',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'm4a',
+                    'preferredcodec': config.AUDIO_FORMAT,
                     'preferredquality': '192'
                 }],
             }
@@ -167,7 +166,7 @@ class MediaFile:
 
     @property
     def extension(self):
-        return 'mp4' if self.is_video else 'm4a'
+        return config.VIDEO_FORMAT if self.is_video else config.AUDIO_FORMAT
 
     @property
     def should_be_shortened(self):
@@ -334,7 +333,7 @@ class AudioProcessor(MediaProcessor):
             ffmpeg_exe(),
             '-y',
             '-ss', str(media_file.track_start_time),
-            '-t', '{}'.format(TRACK_LENGTH),
+            '-t', '{}'.format(config.track_length),
             '-i', media_file.download_path,
             '-acodec', 'copy',
             '-ar', '44100',
@@ -450,7 +449,7 @@ class VideoProcessor(MediaProcessor):
             ffmpeg_exe(),
             '-y',
             '-ss', str(media_file.track_start_time),
-            '-t', '{}'.format(TRACK_LENGTH),
+            '-t', '{}'.format(config.track_length),
             '-i', media_file.download_path,
             '-codec', 'copy',
             media_file.output_path

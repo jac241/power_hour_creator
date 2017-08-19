@@ -8,6 +8,10 @@ class PowerHourModel(QSqlTableModel):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
 
+        self.setTable('power_hours')
+        self.setEditStrategy(QSqlTableModel.OnFieldChange)
+        self.select()
+
     def add_power_hour(self):
         row = self.rowCount()
         self.insertRow(row)

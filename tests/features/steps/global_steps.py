@@ -5,8 +5,7 @@ from PyQt5.QtTest import QTest
 from PyQt5.Qt import Qt
 from behave import *
 
-from power_hour_creator.config import ROOT_DIR
-from power_hour_creator.media import TRACK_LENGTH
+from power_hour_creator.config import ROOT_DIR, track_length
 from power_hour_creator.ui.tracklist import TracklistModel
 from tests.features.environment import SUPPORT_PATH
 
@@ -60,7 +59,7 @@ def add_song_to_tracklist(context, tracks=remote_tracks, full_song=False, pos=No
         QTest.keyClick(viewport.focusWidget(), Qt.Key_Down)
 
     context.num_tracks += 1
-    context.prhr_length += track.length if full_song or track.length < 60 else TRACK_LENGTH
+    context.prhr_length += track.length if full_song or track.length < track_length else track_length
 
 
 def add_local_song_to_tracklist(context):

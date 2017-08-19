@@ -30,8 +30,12 @@ def setup_logging():
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     # tell the handler to use this format
     console.setFormatter(formatter)
+
     # add the handler to the root _logger
-    logging.getLogger('').addHandler(console)
+    root_logger = logging.getLogger('')
+
+    if len(root_logger.handlers) < 1: # this gets called
+        root_logger.addHandler(console)
 
 
 def connect_to_db():
