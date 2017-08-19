@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMainWindow, QHeaderView, QFileDialog, QDialog, \
     QMessageBox
 
 from power_hour_creator import config
-from power_hour_creator.media import CreatePowerHourService, PowerHour
+from power_hour_creator.media import PowerHourExportService, PowerHour
 from power_hour_creator.resources import image_path
 from power_hour_creator.ui.power_hour_list import PowerHourModel
 from power_hour_creator.ui.tracklist import TracklistModel, TrackDelegate
@@ -258,9 +258,10 @@ class PowerHourExportThread(QThread):
         self._is_cancelled = False
 
     def run(self):
-        self.service = CreatePowerHourService(
+        self.service = PowerHourExportService(
             power_hour=self._power_hour,
-            progress_listener=self)
+            progress_listener=self
+        )
 
         self.service.execute()
 
@@ -286,6 +287,6 @@ class PowerHourExportThread(QThread):
 
     def cancel_export(self):
         self._is_cancelled = True
-        self.service.cancel()
+        self.service.cancel_export()
 
 

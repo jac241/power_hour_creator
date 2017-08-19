@@ -7,7 +7,7 @@ import power_hour_creator.config
 from power_hour_creator import power_hour_creator, config, boot
 from PyQt5.QtTest import QTest
 
-SUPPORT_PATH = os.path.join(config.ROOT_DIR, "../tests/support")
+SUPPORT_PATH = os.path.join(config.ROOT_DIR, "..", "tests", "support")
 
 def before_all(context):
     config.phc_env = 'test'

@@ -191,58 +191,71 @@ class MediaFile:
         return json.loads(output)
 
 
-class CreatePowerHourService:
+class PowerHourExportService:
     def __init__(self, power_hour, progress_listener):
         self._power_hour = power_hour
         self._progress_listener = progress_listener
+
         self._logger = logging.getLogger(__name__)
-        self._is_cancelled = False
+        self._export_was_cancelled = False
 
     def execute(self):
-        with TemporaryDirectory() as download_dir:
-            self._logger.debug("ffmpeg location : %s", ffmpeg_dir())
-            self._logger.debug("ffmpeg found: %s", os.path.exists(ffmpeg_dir()))
+        with TemporaryDirectory() as temporary_dir:
+            self._export_power_hour(download_dir=temporary_dir)
 
-            processor = self._build_media_processor(download_dir)
-            try:
-                media_files = []
-                for index, track in enumerate(self._power_hour.tracks):
-                    if self._is_cancelled:
-                        break
+    def cancel_export(self):
+        self._export_was_cancelled = True
 
-                    self._progress_listener.on_new_track_downloading(index, track)
+    def _export_power_hour(self, download_dir):
+        processor = self._build_media_processor(download_dir)
+        media_files = list(self._media_files_in_power_hour(download_dir))
 
-                    media_file = MediaFile(
-                        track=track,
-                        position=index,
-                        directory=download_dir,
-                        is_video=self._power_hour.is_video
-                    )
+        try:
+            for media_file in media_files:
+                if self._export_was_cancelled:
+                    break
 
-                    downloader = build_media_downloader(media_file.track_url)
-                    downloader.download(
-                        media_file=media_file,
-                        progress_listener=self._progress_listener
-                    )
+                self._download_media_file(media_file)
 
-                    processor.process_file(media_file)
-                    media_files.append(media_file)
+                if self._export_was_cancelled:
+                    break
 
-                if not self._is_cancelled:
-                    normalize_audio(media_files)
+                self._process_media_file(media_file, processor)
 
-                if not self._is_cancelled:
-                    output_paths = list(map(lambda f: f.output_path, media_files))
-                    processor.merge_files_into_power_hour(output_paths, self._power_hour.path)
+            if not self._export_was_cancelled:
+                normalize_audio(media_files)
 
-                if self._is_cancelled:  # can be cancelled at any time
-                    self._handle_cancellation()
+            if not self._export_was_cancelled:
+                output_paths = list(map(lambda f: f.output_path, media_files))
+                processor.merge_files_into_power_hour(output_paths,
+                                                      self._power_hour.path)
 
-            except subprocess.CalledProcessError as e:
-                self._progress_listener.on_service_error(
-                    'Error in process: {}\nOutput: {}\nError code: {}'.format(e.cmd, e.output, e.returncode))
-            except FileNotFoundError as e:
-                self._progress_listener.on_service_error(str(e))
+            if self._export_was_cancelled:  # can be cancelled at any time
+                self._handle_cancellation()
+
+        except subprocess.CalledProcessError as e:
+            self._progress_listener.on_service_error(
+                'Error in process: {}\nOutput: {}\nError code: {}'.format(
+                    e.cmd,
+                    e.output,
+                    e.returncode
+                )
+            )
+
+        except FileNotFoundError as e:
+            self._progress_listener.on_service_error(str(e))
+
+    def _process_media_file(self, media_file, processor):
+        processor.process_file(media_file)
+
+    def _media_files_in_power_hour(self, download_dir):
+        for index, track in enumerate(self._power_hour.tracks):
+            yield MediaFile(
+                track=track,
+                position=index,
+                directory=download_dir,
+                is_video=self._power_hour.is_video
+            )
 
     def _build_media_processor(self, download_dir):
         if self._power_hour.is_video:
@@ -256,14 +269,24 @@ class CreatePowerHourService:
                 progress_listener=self._progress_listener,
             )
 
-    def cancel(self):
-        self._is_cancelled = True
-
     def _handle_cancellation(self):
         try:
             os.remove(self._power_hour.path)
         except FileNotFoundError:
             pass
+
+    def _download_media_file(self, media_file):
+        self._progress_listener.on_new_track_downloading(
+            download_number=media_file._position,
+            track=media_file.track
+        )
+
+        downloader = build_media_downloader(media_file.track_url)
+        downloader.download(
+            media_file=media_file,
+            progress_listener=self._progress_listener
+        )
+
 
 
 class MediaProcessor:
