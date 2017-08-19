@@ -30,8 +30,8 @@ def launch_app():
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     logger.info("Showing main window")
     app.main_window = MainWindow(
-        power_hour_model=PowerHourModel(app),
-        tracklist_model=TracklistModel(app)
+        power_hour_model=PowerHourModel(parent=app),
+        tracklist_model=TracklistModel(parent=app)
     )
     app.main_window.show()
     return app
