@@ -5,6 +5,9 @@ DEFAULT_PR_HR_NAME = "New Power Hour"
 
 
 class PowerHourModel(QSqlTableModel):
+    def __init__(self, parent=None, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+
     def add_power_hour(self):
         row = self.rowCount()
         self.insertRow(row)

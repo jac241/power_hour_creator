@@ -4,7 +4,7 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 
 from .boot import bootstrap_app
-from .ui.power_hour_creator_window import PowerHourCreatorWindow
+from .ui.main_window import MainWindow
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -27,7 +27,7 @@ def launch_app():
     logger.info("Launching GUI")
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     logger.info("Showing main window")
-    app.main_window = PowerHourCreatorWindow()
+    app.main_window = MainWindow()
     app.main_window.show()
     return app
 

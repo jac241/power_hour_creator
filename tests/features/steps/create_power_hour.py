@@ -1,25 +1,23 @@
-import time
-
-import psutil
-from PyQt5.QtCore import QModelIndex
-from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtWidgets import QApplication
-from behave import *
-from PyQt5.QtTest import QTest
-from PyQt5.Qt import Qt, QPoint
-from unittest.mock import Mock
-from hamcrest import *
 import os
 import re
+import time
+from unittest.mock import Mock
 
+import psutil
+from PyQt5.Qt import Qt, QPoint
+from PyQt5.QtCore import QModelIndex
+from PyQt5.QtSql import QSqlQuery
+from PyQt5.QtTest import QTest
+from PyQt5.QtWidgets import QApplication
+from behave import *
+from hamcrest import *
 from youtube_dl import DownloadError
 
-from power_hour_creator.ui.power_hour_creator_window import ExportPowerHourDialog
+from power_hour_creator.media import MediaFile
+from power_hour_creator.ui.exporting import ExportPowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime, \
     DEFAULT_NUM_TRACKS, TracklistModel
-from power_hour_creator.media import TRACK_LENGTH, MediaFile
 from tests.features.environment import close_app, launch_app
-
 from tests.features.steps.global_steps import add_remote_song_to_tracklist, \
     tracklist_cell_pos, add_local_song_to_tracklist, local_videos
 
