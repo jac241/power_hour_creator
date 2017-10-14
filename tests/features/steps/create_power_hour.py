@@ -113,11 +113,14 @@ def step_impl(context, track_num, start_time):
     :type track_num: str
     :type start_time: str
     """
+    set_track_start_time(context, start_time, track_num)
+
+
+def set_track_start_time(context, start_time, track_num):
     cell = tracklist_cell_pos(context,
                               row=int(track_num),
                               column=TracklistModel.Columns.start_time)
     QTest.mouseClick(context.tracklist.viewport(), Qt.LeftButton, pos=cell)
-
     QTest.keyClicks(context.tracklist.viewport().focusWidget(), start_time)
     QTest.keyClick(context.tracklist.viewport().focusWidget(), Qt.Key_Return)
 

@@ -1,5 +1,6 @@
 import os
 import glob
+from contextlib import suppress
 
 from PyQt5.QtSql import QSqlQuery
 
@@ -73,9 +74,7 @@ def clean_database():
 
 def delete_database():
     if 'test' in config.db_path():
-        try:
+        with suppress(OSError):
             os.remove(config.db_path())
-        except OSError:
-            pass
 
 

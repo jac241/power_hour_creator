@@ -6,6 +6,7 @@ from behave import *
 from hamcrest import *
 
 from power_hour_creator.ui.tracklist import DisplayTime, TracklistModel
+from tests.features.steps.create_power_hour import set_track_start_time
 
 use_step_matcher("re")
 
@@ -42,6 +43,14 @@ def step_impl(context):
     )
 
 
+@step("I set the first track's start time to a couple spaces")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    set_track_start_time(context, track_num=1, start_time=' ')
+
+
 @step("the track's start time should be set blank")
 def step_impl(context):
     """
@@ -49,3 +58,4 @@ def step_impl(context):
     """
     start_time = context.tracklist_test_model.track_start_time(track_index=1)
     assert_that(start_time, is_(''))
+

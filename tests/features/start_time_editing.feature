@@ -14,5 +14,5 @@ Feature: Start time editing
 
   Scenario: Blank start times shouldn't crash app
     When I add a local video to a power hour
-    And I set track 1's start time to ' '
+    And I set the first track's start time to a couple spaces
     Then the track's start time should be set blank
