@@ -16,3 +16,8 @@ Feature: Start time editing
     When I add a local video to a power hour
     And I set the first track's start time to a couple spaces
     Then the track's start time should be set blank
+
+  Scenario: Should not let user export power hour with blank start times
+    When I add a local video to a power hour
+    And I set the first track's start time to a couple spaces
+    Then I should not be able to create a power hour

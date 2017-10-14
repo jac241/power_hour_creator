@@ -198,7 +198,7 @@ class DbError(IOError):
 
 class TracklistModel(QSqlTableModel):
 
-    power_hour_changed = pyqtSignal()
+    new_power_hour_selected = pyqtSignal()
     error_downloading = pyqtSignal(str, str)
 
     class Columns:
@@ -228,11 +228,11 @@ class TracklistModel(QSqlTableModel):
         self.setHeaderData(self.Columns.full_song, Qt.Horizontal, "Full Song?")
 
         self.setSort(self.Columns.position, Qt.AscendingOrder)
-        self.dataChanged.connect(self._handle_data_change)
+        self.dataChanged.connect(self._load_track_info_if_new_url_given)
 
         self.select()
 
-    def _handle_data_change(self, top_left_index, *_):
+    def _load_track_info_if_new_url_given(self, top_left_index, *_):
         column = top_left_index.column()
         row = top_left_index.row()
         if column == self.Columns.url:
@@ -276,9 +276,13 @@ class TracklistModel(QSqlTableModel):
 
         return tracks
 
-    def has_tracks(self):
-        model = self._tracks_query_model()
-        return model.rowCount()
+    def is_valid_for_export(self):
+        if self.current_power_hour_id is not None:
+            model = self._tracks_query_model()
+            num = self._num_tracks_with_blank_start_times()
+            return model.rowCount() and num == 0
+        else:
+            return False
 
     def _tracks_query_model(self):
         model = QSqlTableModel()
@@ -290,6 +294,24 @@ class TracklistModel(QSqlTableModel):
         model.setSort(self.Columns.position, Qt.AscendingOrder)
         model.select()
         return model
+
+    def _num_tracks_with_blank_start_times(self):
+        query = self._blank_start_time_query()
+        query.exec_()
+        query.next()
+        return query.value(0)
+
+    def _blank_start_time_query(self):
+        query = QSqlQuery()
+        query.prepare(
+            "SELECT COUNT(*) "
+            "FROM tracks "
+            "WHERE power_hour_id = :power_hour_id AND "
+            "      url != '' AND "
+            "      trim(start_time) = ''"
+        )
+        query.bindValue(':power_hour_id', self.current_power_hour_id)
+        return query
 
     def add_tracks_to_new_power_hour(self, power_hour_id):
         self.beginInsertRows(QModelIndex(), 0, DEFAULT_NUM_TRACKS-1)
@@ -329,7 +351,7 @@ class TracklistModel(QSqlTableModel):
     def show_tracks_for_power_hour(self, power_hour_id):
         self.setFilter("power_hour_id = {}".format(power_hour_id))
         self.current_power_hour_id = power_hour_id
-        self.power_hour_changed.emit()
+        self.new_power_hour_selected.emit()
 
     def insert_row_accounting_for_existing_tracks(self, row):
         self.beginInsertRows(QModelIndex(), row, row)

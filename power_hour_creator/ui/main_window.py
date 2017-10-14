@@ -90,7 +90,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _enable_create_power_hour_button_when_tracks_present(self):
         self.tracklist_model\
-            .power_hour_changed\
+            .new_power_hour_selected\
             .connect(self._try_to_enable_create_button_on_tracklist_change)
 
         self.tracklist_model\
@@ -100,7 +100,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self._try_to_enable_create_button_on_tracklist_change()
 
     def _try_to_enable_create_button_on_tracklist_change(self):
-        self.createPowerHourButton.setEnabled(self.tracklist_model.has_tracks())
+        self.createPowerHourButton.setEnabled(self.tracklist_model.is_valid_for_export())
 
     def _show_worker_error(self, message):
         msg = QMessageBox(self)
