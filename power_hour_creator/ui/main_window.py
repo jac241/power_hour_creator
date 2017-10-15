@@ -49,7 +49,6 @@ class MainWindow(QMainWindow, Ui_mainWindow):
     def _setup_tracklist(self):
         self._setup_tracklist_model()
         self._setup_tracklist_delegate()
-        self._setup_tracklist_appearance()
 
     def _setup_tracklist_model(self):
         self.tracklist.setModel(self.tracklist_model)
@@ -59,11 +58,6 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _setup_tracklist_delegate(self):
         self.tracklist.setItemDelegate(self.tracklist_delegate)
-
-    def _setup_tracklist_appearance(self):
-        self.tracklist\
-            .horizontalHeader()\
-            .setSectionResizeMode(QHeaderView.Stretch)
 
     def _connect_create_power_hour_button(self):
         self.createPowerHourButton.clicked.connect(self._export_power_hour)
