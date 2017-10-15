@@ -1,4 +1,6 @@
 import os
+import platform
+import subprocess
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QIcon
@@ -138,7 +140,8 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _connect_help_menu(self):
         def show_logs():
-            os.startfile(config.APP_DIRS.user_log_dir, 'explore')
+            show_log_folder_in_file_browser()
+
         self.actionShow_logs.triggered.connect(show_logs)
 
     def _connect_file_menu(self):
@@ -185,4 +188,12 @@ def build_main_window(parent):
         ),
         track_error_dispatcher=track_error_dispatcher
     )
+
+
+def show_log_folder_in_file_browser():
+    system = platform.system().lower()
+    if system == 'windows':
+        os.startfile(config.APP_DIRS.user_log_dir, 'explore')
+    elif system == 'darwin':
+        subprocess.check_call(['open', config.APP_DIRS.user_log_dir])
 

@@ -1,4 +1,5 @@
 import os
+import platform
 
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtWidgets import QDialog, QFileDialog
@@ -138,13 +139,27 @@ def export_power_hour_in_background(power_hour,
 
 
 def get_power_hour_export_path(parent, is_video):
+    locator = ExportLocator()
     if is_video:
         file_description = 'Video (*.{})'.format(config.VIDEO_FORMAT)
         return QFileDialog.getSaveFileName(parent, "Export Power Hour",
-                                           os.path.expanduser('~/Videos'),
+                                           os.path.expanduser(locator.video_dir),
                                            file_description)[0]
     else:
         file_description = 'Audio (*.{})'.format(config.AUDIO_FORMAT)
         return QFileDialog.getSaveFileName(parent, "Export Power Hour",
-                                           os.path.expanduser('~/Music'),
+                                           os.path.expanduser(locator.music_dir),
                                            file_description)[0]
+
+
+class ExportLocator:
+    @property
+    def video_dir(self):
+        if platform.system().lower() == 'darwin':
+            return '~/Movies'
+        else:
+            return '~/Videos'
+
+    @property
+    def music_dir(self):
+        return '~/Music'
