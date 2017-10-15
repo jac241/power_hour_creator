@@ -56,7 +56,7 @@ class Ui_mainWindow(object):
         self.tracklist.setEditTriggers(QtWidgets.QAbstractItemView.AllEditTriggers)
         self.tracklist.setDragEnabled(False)
         self.tracklist.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.tracklist.setShowGrid(False)
+        self.tracklist.setShowGrid(True)
         self.tracklist.setObjectName("tracklist")
         self.tracklist.horizontalHeader().setStretchLastSection(True)
         self.tracksLayout.addWidget(self.tracklist)
