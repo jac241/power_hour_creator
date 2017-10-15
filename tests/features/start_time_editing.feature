@@ -12,6 +12,12 @@ Feature: Start time editing
     Then there should be an error that the start time is invalid
     And the track's start time should be set blank
 
+  Scenario: Should show an error if start time format is bad
+    When I add a local video to a power hour
+    And I set track 1's start time to :
+    Then there should be an error that the start time has a bad format
+    And the track's start time should be set blank
+
   Scenario: Blank start times shouldn't crash app
     When I add a local video to a power hour
     And I set the first track's start time to a couple spaces

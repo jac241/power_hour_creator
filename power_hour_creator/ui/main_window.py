@@ -78,11 +78,19 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         )
 
     def _show_track_error(self, error):
-        self.statusBar.showMessage(
-            "Error: Start time {} is greater than the track's length"
-                .format(error['start_time']),
-            ERROR_DISPLAY_TIME_IN_MS
-        )
+        if error['code'] == 'start_time_too_late':
+            self.statusBar.showMessage(
+                "Error: Start time {} is greater than the track's length"
+                    .format(error['start_time']),
+                ERROR_DISPLAY_TIME_IN_MS
+            )
+        elif error['code'] == 'start_time_format_bad':
+            self.statusBar.showMessage(
+                'Error: Start time "{}" is not in a usable format'
+                    .format(error['start_time']),
+                ERROR_DISPLAY_TIME_IN_MS
+            )
+
 
     def _enable_create_power_hour_button_when_tracks_present(self):
         self.tracklist_model\

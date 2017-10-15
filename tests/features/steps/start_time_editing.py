@@ -38,9 +38,22 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     assert_that(
-        context.main_window.statusBar.currentMessage(),
+        status_bar_message(context),
         is_("Error: Start time {} is greater than the track's length".format(context.bad_start_time))
     )
+
+
+def status_bar_message(context):
+    return context.main_window.statusBar.currentMessage()
+
+
+@then("there should be an error that the start time has a bad format")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    assert 'Error' in status_bar_message(context)
+    assert 'format' in status_bar_message(context)
 
 
 @step("I set the first track's start time to a couple spaces")
@@ -48,7 +61,7 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    set_track_start_time(context, track_num=1, start_time=' ')
+    set_track_start_time(context, track_num=1, start_time='\b ')
 
 
 @step("the track's start time should be set blank")

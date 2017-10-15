@@ -1,4 +1,7 @@
-from PyQt5.QtCore import QModelIndex
+import logging
+
+from PyQt5.QtCore import QModelIndex, QRegExp
+from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtSql import QSqlTableModel, QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import QMenu, QAction, \
     QTableView
@@ -8,12 +11,16 @@ from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import pyqtSignal, Qt
 import re
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from power_hour_creator.media import Track, find_track
 from youtube_dl import DownloadError
 
 DEFAULT_NUM_TRACKS = 60
+
+
+class ConversionError(Exception):
+    pass
 
 
 class DisplayTime:
@@ -34,19 +41,25 @@ class DisplayTime:
         return "%02d:%02d%s" % (m, s, f_str)
 
     def as_decimal(self):
-        if self._is_a_number():
-            return self._time
+        try:
+            if self._is_a_number():
+                return self._time
 
-        if len(self._time) == 0:
-            return self._time
+            if len(self._time) == 0:
+                return self._time
 
-        if self._has_invalid_characters():
-            return ''
+            if self._has_invalid_characters():
+                return ''
 
-        if self._just_seconds_in_string():
-            return Decimal(self._time)
+            if self._just_seconds_in_string():
+                return Decimal(self._time)
 
-        return sum(x * Decimal(t) for x, t in zip([60, 1], self._time.split(':')))
+            return sum(x * Decimal(t) for x, t in zip([60, 1], self._time.split(':')))
+        except (InvalidOperation, TypeError) as e:
+            logger = logging.getLogger(__name__)
+            logger.exception('Error converting string to decimal for DisplayTime', self._time)
+            raise ConversionError
+
 
     def _already_a_time_str(self):
         return ':' in str(self._time)
@@ -82,11 +95,19 @@ class StartTimeValidator():
             TracklistModel.Columns.length
         ).data(Qt.DisplayRole)
 
-        if not DisplayTime(start_time).as_decimal() < track_length:
+        try:
+            if not DisplayTime(start_time).as_decimal() < track_length:
+                raise ValidationError(params={
+                    'code': 'start_time_too_late',
+                    'start_time': start_time
+                })
+        except ConversionError:
             raise ValidationError(params={
-                'code': 'start_time_too_late',
-                'start_time': start_time
-            })
+                    'code': 'start_time_format_bad',
+                    'start_time': start_time
+                })
+
+
 
 
 class TrackDelegate(QItemDelegate):
@@ -163,6 +184,8 @@ class TrackDelegate(QItemDelegate):
             return None
         if self._column_is_a_time_column(index):
             line_edit = QLineEdit(parent)
+            reg_exp_validator = QRegExpValidator(QRegExp('[0-9.:]*'), parent)
+            line_edit.setValidator(reg_exp_validator)
             line_edit.editingFinished.connect(self._commit_and_close_editor)
             return line_edit
         if self._column_is_a_boolean_column(index):
