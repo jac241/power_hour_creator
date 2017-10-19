@@ -2,6 +2,7 @@ import logging
 import sys
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import QCoreApplication
 
 from power_hour_creator.ui.main_window import build_main_window
 from .boot import bootstrap_app
@@ -21,12 +22,17 @@ sys.excepthook = handle_exception
 
 def launch_app():
     app = QtWidgets.QApplication(sys.argv)
+    QCoreApplication.setOrganizationName('jac241')
+    QCoreApplication.setApplicationName('Power Hour Creator')
+
     bootstrap_app()
+    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+
     logger = logging.getLogger(__name__)
     logger.info("Bootstrapping app environment")
     logger.info("Launching GUI")
-    app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     logger.info("Showing main window")
+
     app.main_window = build_main_window(app)
     app.main_window.show()
     return app

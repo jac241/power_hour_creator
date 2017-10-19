@@ -2,9 +2,9 @@ import os
 import platform
 import subprocess
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, QSettings, QSize, QPoint
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox, QApplication
 
 from power_hour_creator import config
 from power_hour_creator.media import PowerHour
@@ -39,6 +39,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self._connect_file_menu()
         self._connect_power_hour_list_view()
         self.setWindowIcon(QIcon(image_path('Beer-80.png')))
+        self._restore_view_settings()
 
     def _setup_power_hour_list_view(self):
         self.powerHoursListView.setModel(self.power_hour_model)
@@ -174,6 +175,33 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _current_power_hour_name(self):
         return self.powerHourNameLabel.text()
+
+    def closeEvent(self, event):
+        self._write_view_settings()
+
+        event.accept()
+
+    def _write_view_settings(self):
+        settings = QSettings()
+        settings.setValue('main_window/size', self.size())
+        settings.setValue('main_window/pos', self.pos())
+
+        settings.setValue('splitter', self.splitter.saveState())
+
+        self.tracklist.write_settings(settings)
+
+    def _restore_view_settings(self):
+        settings = QSettings()
+
+        self.resize(settings.value('main_window/size', QSize(800, 600)))
+        self.move(settings.value('main_window/pos', QPoint(0, 0)))
+
+        if settings.contains('splitter'):
+            self.splitter.restoreState(settings.value('splitter'))
+
+        self.tracklist.apply_settings(settings)
+
+
 
 
 class TrackErrorDispatch(QObject):

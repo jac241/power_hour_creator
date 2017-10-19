@@ -1,6 +1,6 @@
 import logging
 
-from PyQt5.QtCore import QModelIndex, QRegExp
+from PyQt5.QtCore import QModelIndex, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtSql import QSqlTableModel, QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import QMenu, QAction, \
@@ -517,3 +517,10 @@ class Tracklist(QTableView):
     def _delete_selected_tracks(self):
         for index in reversed(sorted(self.selectionModel().selectedRows())):
             self.model().remove_track_accounting_for_existing_tracks(index.row())
+
+    def write_settings(self, settings):
+        settings.setValue('tracklist/header', self.horizontalHeader().saveState())
+
+    def apply_settings(self, settings):
+        if settings.contains('tracklist/header'):
+            self.horizontalHeader().restoreState(settings.value('tracklist/header'))
