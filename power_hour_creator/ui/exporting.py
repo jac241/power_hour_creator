@@ -1,10 +1,10 @@
 import os
 import platform
 
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QSettings
 from PyQt5.QtWidgets import QDialog, QFileDialog
 
-from power_hour_creator import config
+from power_hour_creator import config, resources
 from power_hour_creator.media import PowerHourExportService
 from power_hour_creator.ui.forms.power_hour_export_dialog import \
     Ui_PowerHourExportDialog
@@ -139,27 +139,61 @@ def export_power_hour_in_background(power_hour,
 
 
 def get_power_hour_export_path(parent, is_video):
-    locator = ExportLocator()
-    if is_video:
-        file_description = 'Video (*.{})'.format(config.VIDEO_FORMAT)
-        return QFileDialog.getSaveFileName(parent, "Export Power Hour",
-                                           os.path.expanduser(locator.video_dir),
-                                           file_description)[0]
-    else:
-        file_description = 'Audio (*.{})'.format(config.AUDIO_FORMAT)
-        return QFileDialog.getSaveFileName(parent, "Export Power Hour",
-                                           os.path.expanduser(locator.music_dir),
-                                           file_description)[0]
+    return ExportLocator(export_is_video=is_video, parent=parent).get_save_file_name()
 
 
 class ExportLocator:
-    @property
-    def video_dir(self):
-        if platform.system().lower() == 'darwin':
-            return '~/Movies'
-        else:
-            return '~/Videos'
+    default_vid_dir = {
+        'darwin': '~/Movies',
+        'windows': '~/Videos'
+    }
+
+    def __init__(self, export_is_video, parent, settings=config.persistent_settings()):
+        self._export_is_video = export_is_video
+        self._parent = parent
+        self._settings = settings
+
+    def get_save_file_name(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self._parent,
+            'Export Power Hour',
+            os.path.expanduser(self._directory),
+            self._file_description,
+        )
+
+        self._store_directory_if_present(path)
+
+        return path
 
     @property
-    def music_dir(self):
-        return '~/Music'
+    def _directory(self):
+        return self._settings.value(self._last_dir_settings_key, self._default_dir)
+
+    @property
+    def _last_dir_settings_key(self):
+        prefix = 'exporting'
+        if self._export_is_video:
+            return prefix + '/last_video_dir'
+        else:
+            return prefix + '/last_audio_dir'
+
+    @property
+    def _default_dir(self):
+        if self._export_is_video:
+            return self.default_vid_dir[config.OS]
+        else:
+            return '~/Music'
+
+    @property
+    def _file_description(self):
+        if self._export_is_video:
+            return 'Video (*.{})'.format(config.VIDEO_FORMAT)
+        else:
+            return 'Audio (*.{})'.format(config.AUDIO_FORMAT)
+
+    def _store_directory_if_present(self, path):
+        if path:
+            self._settings.setValue(
+                self._last_dir_settings_key,
+                os.path.dirname(path)
+            )

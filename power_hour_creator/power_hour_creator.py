@@ -4,6 +4,7 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QCoreApplication
 
+from power_hour_creator import config
 from power_hour_creator.ui.main_window import build_main_window
 from .boot import bootstrap_app
 
@@ -22,8 +23,8 @@ sys.excepthook = handle_exception
 
 def launch_app():
     app = QtWidgets.QApplication(sys.argv)
-    QCoreApplication.setOrganizationName('jac241')
-    QCoreApplication.setApplicationName('Power Hour Creator')
+    QCoreApplication.setOrganizationName(config.APP_AUTHOR)
+    QCoreApplication.setApplicationName(config.APP_NAME)
 
     bootstrap_app()
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)

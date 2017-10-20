@@ -6,7 +6,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QSettings, QSize, QPoint
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox, QApplication
 
-from power_hour_creator import config
+from power_hour_creator import config, resources
 from power_hour_creator.media import PowerHour
 from power_hour_creator.resources import image_path
 from power_hour_creator.ui.exporting import export_power_hour_in_background, \
@@ -28,7 +28,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tracklist_model = tracklist_model
         self.tracklist_delegate = tracklist_delegate
         self.track_error_dispatcher = track_error_dispatcher
-        self._settings = QSettings()
+        self._settings = config.persistent_settings()
 
         self.setupUi(self)
         self._setup_power_hour_list_view()
@@ -230,9 +230,8 @@ def build_main_window(parent):
 
 
 def show_log_folder_in_file_browser():
-    system = platform.system().lower()
-    if system == 'windows':
+    if config.OS == 'windows':
         os.startfile(config.APP_DIRS.user_log_dir, 'explore')
-    elif system == 'darwin':
+    elif config.OS == 'darwin':
         subprocess.check_call(['open', config.APP_DIRS.user_log_dir])
 

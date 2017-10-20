@@ -1,5 +1,7 @@
 import os
+import platform
 
+from PyQt5.QtCore import QSettings
 from appdirs import AppDirs
 
 APP_NAME = "Power Hour Creator"
@@ -13,10 +15,15 @@ VIDEO_FORMAT = 'mp4'
 
 phc_env = os.environ.get('PHC_ENV', 'production')
 
+MIGRATIONS_PATH = os.path.join(ROOT_DIR, 'db', 'migrations')
+track_length = 60
+
+OS = platform.system().lower()
+
 
 def db_path():
     return os.path.join(APP_DIRS.user_data_dir, '{}.db'.format(phc_env))
 
 
-MIGRATIONS_PATH = os.path.join(ROOT_DIR, 'db', 'migrations')
-track_length = 60
+def persistent_settings():
+    return QSettings(APP_AUTHOR, APP_NAME)

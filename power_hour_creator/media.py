@@ -242,7 +242,6 @@ class PowerHourExportService:
                     e.returncode
                 )
             )
-
         except FileNotFoundError as e:
             self._progress_listener.on_service_error(str(e))
 

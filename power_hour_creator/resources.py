@@ -3,6 +3,7 @@ from os.path import join, abspath
 import sys
 import platform
 
+from power_hour_creator import config
 from power_hour_creator.config import EXT_DIR
 
 
@@ -24,10 +25,10 @@ def ffmpeg_dir():
 
 def platform_dir():
     options = {
-        'Windows': 'ffmpeg-3.2.2-win32-static',
-        'Darwin': 'mac'
+        'windows': 'ffmpeg-3.2.2-win32-static',
+        'darwin': 'mac'
     }
-    return options.get(platform.system())
+    return options.get(config.OS)
 
 
 def ffmpeg_exe():
