@@ -173,9 +173,9 @@ class ExportLocator:
     def _last_dir_settings_key(self):
         prefix = 'exporting'
         if self._export_is_video:
-            return prefix + '/last_video_dir'
+            return f'{prefix}/last_video_dir'
         else:
-            return prefix + '/last_audio_dir'
+            return f'{prefix}/last_audio_dir'
 
     @property
     def _default_dir(self):
@@ -187,9 +187,9 @@ class ExportLocator:
     @property
     def _file_description(self):
         if self._export_is_video:
-            return 'Video (*.{})'.format(config.VIDEO_FORMAT)
+            return f'Video (*.{config.VIDEO_FORMAT})'
         else:
-            return 'Audio (*.{})'.format(config.AUDIO_FORMAT)
+            return f'Audio (*.{config.VIDEO_FORMAT})'
 
     def _store_directory_if_present(self, path):
         if path:

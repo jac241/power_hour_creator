@@ -48,7 +48,7 @@ exe = EXE(pyz,
           console=False )
 
 app = BUNDLE(exe,
-             name='power_hour_creator.app',
+             name='Power Hour Creator.app',
              icon=None,
              bundle_identifier=None)
 
