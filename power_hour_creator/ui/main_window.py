@@ -28,6 +28,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tracklist_model = tracklist_model
         self.tracklist_delegate = tracklist_delegate
         self.track_error_dispatcher = track_error_dispatcher
+        self._settings = QSettings()
 
         self.setupUi(self)
         self._setup_power_hour_list_view()
@@ -182,16 +183,20 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         event.accept()
 
     def _write_view_settings(self):
-        settings = QSettings()
-        settings.setValue('main_window/size', self.size())
-        settings.setValue('main_window/pos', self.pos())
+        self._settings.setValue('main_window/maximized', self.isMaximized())
+        self._store_size_and_pos_unless_maximized()
+        self._settings.setValue('splitter', self.splitter.saveState())
 
-        settings.setValue('splitter', self.splitter.saveState())
+        self.tracklist.write_settings(self._settings)
 
-        self.tracklist.write_settings(settings)
+    def _store_size_and_pos_unless_maximized(self):
+        # https://stackoverflow.com/questions/74690/how-do-i-store-the-window-size-between-sessions-in-qt
+        if not self.isMaximized():
+            self._settings.setValue('main_window/size', self.size())
+            self._settings.setValue('main_window/pos', self.pos())
 
     def _restore_view_settings(self):
-        settings = QSettings()
+        settings = self._settings
 
         self.resize(settings.value('main_window/size', QSize(800, 600)))
         self.move(settings.value('main_window/pos', QPoint(0, 0)))
@@ -201,7 +206,11 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
         self.tracklist.apply_settings(settings)
 
-
+    def show_with_last_full_screen_setting(self):
+        if self._settings.value('main_window/maximized') == 'true':
+            self.showMaximized()
+        else:
+            self.show()
 
 
 class TrackErrorDispatch(QObject):

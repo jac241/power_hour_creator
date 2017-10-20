@@ -34,7 +34,7 @@ def launch_app():
     logger.info("Showing main window")
 
     app.main_window = build_main_window(app)
-    app.main_window.show()
+    app.main_window.show_with_last_full_screen_setting()
     return app
 
 
