@@ -189,7 +189,7 @@ class ExportLocator:
         if self._export_is_video:
             return f'Video (*.{config.VIDEO_FORMAT})'
         else:
-            return f'Audio (*.{config.VIDEO_FORMAT})'
+            return f'Audio (*.{config.AUDIO_FORMAT})'
 
     def _store_directory_if_present(self, path):
         if path:

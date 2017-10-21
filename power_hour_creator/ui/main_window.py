@@ -2,11 +2,11 @@ import os
 import platform
 import subprocess
 
-from PyQt5.QtCore import QObject, pyqtSignal, QSettings, QSize, QPoint
+from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox, QApplication
 
-from power_hour_creator import config, resources
+from power_hour_creator import config
 from power_hour_creator.media import PowerHour
 from power_hour_creator.resources import image_path
 from power_hour_creator.ui.exporting import export_power_hour_in_background, \
@@ -172,6 +172,8 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
         self.powerHoursListView.selectionModel().currentRowChanged.connect(show_power_hour_name)
         self.powerHoursListView.selectionModel().currentRowChanged.connect(show_this_power_hours_tracks)
+        self.powerHoursListView.selectionModel().currentRowChanged.connect(self.tracklist.scrollToTop)
+
         self.powerHoursListView.model().dataChanged.connect(show_renamed_power_hour_name)
 
     def _current_power_hour_name(self):
