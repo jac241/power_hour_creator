@@ -501,7 +501,8 @@ class Tracklist(QTableView):
             menu.addAction(delete_selected)
 
         add_track_to_end = QAction('Add Track To End', self)
-        add_track_to_end.triggered.connect(self.model().add_track_to_end)
+        # add_track_to_end.triggered.connect(self.model().add_track_to_end)
+        add_track_to_end.triggered.connect(self._add_track_to_end)
         menu.addAction(add_track_to_end)
 
         menu.popup(self.viewport().mapToGlobal(position))
@@ -517,6 +518,10 @@ class Tracklist(QTableView):
     def _delete_selected_tracks(self):
         for index in reversed(sorted(self.selectionModel().selectedRows())):
             self.model().remove_track_accounting_for_existing_tracks(index.row())
+
+    def _add_track_to_end(self):
+        self.model().add_track_to_end()
+        self.scrollToBottom()
 
     def write_settings(self, settings):
         settings.setValue('tracklist/header', self.horizontalHeader().saveState())
