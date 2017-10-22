@@ -1,10 +1,9 @@
 import os
-import platform
 import subprocess
 
 from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QHeaderView, QMessageBox, QApplication
+from PyQt5.QtWidgets import QMainWindow, QMessageBox
 
 from power_hour_creator import config
 from power_hour_creator.media import PowerHour
@@ -190,6 +189,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self._settings.setValue('splitter', self.splitter.saveState())
 
         self.tracklist.write_settings(self._settings)
+        self.powerHoursListView.write_settings(self._settings)
 
     def _store_size_and_pos_unless_maximized(self):
         # https://stackoverflow.com/questions/74690/how-do-i-store-the-window-size-between-sessions-in-qt
@@ -207,6 +207,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.splitter.restoreState(settings.value('splitter'))
 
         self.tracklist.apply_settings(settings)
+        self.powerHoursListView.apply_settings(settings)
 
     def show_with_last_full_screen_setting(self):
         if self._settings.value('main_window/maximized') == 'true':
