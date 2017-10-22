@@ -3,7 +3,7 @@ import subprocess
 
 from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy
 
 from power_hour_creator import config
 from power_hour_creator.media import PowerHour
@@ -74,24 +74,21 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _show_error_downloading(self, url, error_message):
         self.statusBar.showMessage(
-            'Error downloading "{}": {}'.format(url, error_message),
+            f'Error downloading "{url}": {error_message}',
             ERROR_DISPLAY_TIME_IN_MS
         )
 
     def _show_track_error(self, error):
         if error['code'] == 'start_time_too_late':
             self.statusBar.showMessage(
-                "Error: Start time {} is greater than the track's length"
-                    .format(error['start_time']),
+                f"Error: Start time {error['start_time']} is greater than the track's length",
                 ERROR_DISPLAY_TIME_IN_MS
             )
         elif error['code'] == 'start_time_format_bad':
             self.statusBar.showMessage(
-                'Error: Start time "{}" is not in a usable format'
-                    .format(error['start_time']),
+                f"Error: Start time \"{error['start_time']}\" is not in a usable format",
                 ERROR_DISPLAY_TIME_IN_MS
             )
-
 
     def _enable_create_power_hour_button_when_tracks_present(self):
         self.tracklist_model\
@@ -108,10 +105,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.createPowerHourButton.setEnabled(self.tracklist_model.is_valid_for_export())
 
     def _show_worker_error(self, message):
-        msg = QMessageBox(self)
-        msg.setText('Error occured')
-        msg.setDetailedText(message)
-        msg.show()
+        show_error_message_box(parent=self, message=message)
 
     def _export_power_hour(self):
         power_hour_path = get_power_hour_export_path(
@@ -138,8 +132,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         return self.videoCheckBox.checkState()
 
     def _show_power_hour_created(self):
-        self.statusBar.showMessage(
-            "Power hour created!", CREATED_DISPLAY_TIME_IN_MS)
+        self.statusBar.showMessage("Power hour created!", CREATED_DISPLAY_TIME_IN_MS)
 
     def _connect_help_menu(self):
         def show_logs():
@@ -214,6 +207,23 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.showMaximized()
         else:
             self.show()
+
+
+def show_error_message_box(parent, message):
+    msg_box = QMessageBox(parent)
+    msg_box.setText('An error occured during power hour creation.')
+    msg_box.setDetailedText(message)
+
+    _force_message_box_to_be_wider(msg_box)
+    msg_box.exec_()
+
+
+def _force_message_box_to_be_wider(msg_box):
+    # No easy or sensible way to set QMessageBox width, have to use this hack
+    # http://www.qtcentre.org/threads/22298-QMessageBox-Controlling-the-width
+    spacer = QSpacerItem(msg_box.parent().width() / 2, 0, QSizePolicy.Minimum, QSizePolicy.Expanding)
+    box_layout = msg_box.layout()
+    box_layout.addItem(spacer, box_layout.rowCount(), 0, 1, box_layout.columnCount())
 
 
 class TrackErrorDispatch(QObject):

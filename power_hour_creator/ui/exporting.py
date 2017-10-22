@@ -1,10 +1,9 @@
 import os
-import platform
 
-from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QSettings
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtWidgets import QDialog, QFileDialog
 
-from power_hour_creator import config, resources
+from power_hour_creator import config
 from power_hour_creator.media import PowerHourExportService
 from power_hour_creator.ui.forms.power_hour_export_dialog import \
     Ui_PowerHourExportDialog
@@ -33,7 +32,7 @@ class PowerHourExportThread(QThread):
 
         self.service.execute()
 
-        if not self._is_cancelled:
+        if not (self._is_cancelled or self.service.did_error):
             self.power_hour_created.emit()
 
         self.finished.emit()

@@ -5,12 +5,13 @@ import platform
 import shutil
 import subprocess
 from collections import namedtuple
+from contextlib import suppress
 from decimal import Decimal
 from tempfile import TemporaryDirectory
 
 import attr
 import delegator
-from youtube_dl import YoutubeDL
+from youtube_dl import YoutubeDL, DownloadError
 
 from ffmpeg_normalize.__main__ import FFmpegNormalize
 from power_hour_creator import config
@@ -199,6 +200,7 @@ class PowerHourExportService:
 
         self._logger = logging.getLogger(__name__)
         self._export_was_cancelled = False
+        self.did_error = False
 
     def execute(self):
         with TemporaryDirectory() as temporary_dir:
@@ -235,15 +237,13 @@ class PowerHourExportService:
                 self._handle_cancellation()
 
         except subprocess.CalledProcessError as e:
-            self._progress_listener.on_service_error(
-                'Error in process: {}\nOutput: {}\nError code: {}'.format(
-                    e.cmd,
-                    e.output,
-                    e.returncode
-                )
+            self._handle_exception(
+                f'Error in process: {e.cmd}\nOutput: {e.output}\nError code: {e.returncode}'
             )
         except FileNotFoundError as e:
-            self._progress_listener.on_service_error(str(e))
+            self._handle_exception(str(e))
+        except DownloadError as e:
+            self._handle_exception(f'Error occurred while downloading media file: {e}')
 
     def _process_media_file(self, media_file, processor):
         processor.process_file(media_file)
@@ -270,10 +270,8 @@ class PowerHourExportService:
             )
 
     def _handle_cancellation(self):
-        try:
+        with suppress(FileNotFoundError):
             os.remove(self._power_hour.path)
-        except FileNotFoundError:
-            pass
 
     def _download_media_file(self, media_file):
         self._progress_listener.on_new_track_downloading(
@@ -287,6 +285,10 @@ class PowerHourExportService:
             progress_listener=self._progress_listener
         )
 
+    def _handle_exception(self, message):
+        self._logger.exception('Exception occured during power hour creation')
+        self.did_error = True
+        self._progress_listener.on_service_error(message)
 
 
 class MediaProcessor:
@@ -474,7 +476,7 @@ def build_audio_normalizer(media_files):
     args = {
         # map has no len, so we have to make it a list
         # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
-        '<input-file>': list(map(lambda f: f.output_path, media_files)),
+        '<input-file>': [f.output_path for f in media_files],
         '--acodec': 'aac',
         '--debug': False,
         '--dir': False,
