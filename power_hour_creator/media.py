@@ -225,13 +225,13 @@ class PowerHourExportService:
 
                 self._process_media_file(media_file, processor)
 
+
             if not self._export_was_cancelled:
                 normalize_audio(media_files)
 
             if not self._export_was_cancelled:
-                output_paths = list(map(lambda f: f.output_path, media_files))
-                processor.merge_files_into_power_hour(output_paths,
-                                                      self._power_hour.path)
+                output_paths = [f.output_path for f in media_files]
+                processor.merge_files_into_power_hour(output_paths, self._power_hour.path)
 
             if self._export_was_cancelled:  # can be cancelled at any time
                 self._handle_cancellation()
@@ -286,7 +286,7 @@ class PowerHourExportService:
         )
 
     def _handle_exception(self, message):
-        self._logger.exception('Exception occured during power hour creation')
+        self._logger.exception('Exception occurred during power hour creation')
         self.did_error = True
         self._progress_listener.on_service_error(message)
 
@@ -466,17 +466,17 @@ class VideoProcessor(MediaProcessor):
 
 
 def normalize_audio(media_files):
-    build_audio_normalizer(media_files).run()
+    build_audio_normalizer(output_paths=[f.output_path for f in media_files]).run()
 
     for media_file in media_files:
-        shutil.copyfile(media_file.normalized_path, media_file.output_path)
+        shutil.copyfile(src=media_file.normalized_path, dst=media_file.output_path)
 
 
-def build_audio_normalizer(media_files):
+def build_audio_normalizer(output_paths):
     args = {
         # map has no len, so we have to make it a list
         # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
-        '<input-file>': [f.output_path for f in media_files],
+        '<input-file>': output_paths,
         '--acodec': 'aac',
         '--debug': False,
         '--dir': False,
