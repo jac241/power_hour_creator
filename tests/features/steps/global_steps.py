@@ -1,28 +1,12 @@
-import os
-from collections import namedtuple
-
 from behave import *
 
 from power_hour_creator import config
-from tests.features.environment import SUPPORT_PATH
+from tests.features.models import remote_tracks, remote_videos, local_videos
+from behave import *
 
-Track = namedtuple('Track', 'url length')
-remote_tracks = [
-    Track('https://www.youtube.com/watch?v=EK_voX9LaPA', 105),
-    Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
-]
+from power_hour_creator import config
+from tests.features.models import remote_tracks, remote_videos, local_videos
 
-remote_videos = [
-    Track('https://www.youtube.com/watch?v=XSVunk2LUAo', 202),
-    Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
-]
-
-local_videos = [
-    Track(
-        url=os.path.join(SUPPORT_PATH, 'videos', "cc_roller_coaster.mp4"),
-        length=32
-    )
-]
 
 @when('I add {num_tracks} tracks to a power hour')
 def step_impl(context, num_tracks):

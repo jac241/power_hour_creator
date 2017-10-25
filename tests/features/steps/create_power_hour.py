@@ -21,8 +21,9 @@ from power_hour_creator.ui.tracklist import DisplayTime, \
     DEFAULT_NUM_TRACKS, TracklistModel
 from tests.features.environment import close_app, launch_app
 from tests.features.steps.global_steps import add_remote_song_to_tracklist, \
-    add_local_song_to_tracklist, local_videos
-from tests.features.models import tracklist_cell_pos, TracklistTestModel
+    add_local_song_to_tracklist
+from tests.features.models import tracklist_cell_pos, TracklistTestModel, \
+    local_videos
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 new_ph_name = "My Power Hour"
@@ -481,4 +482,4 @@ def step_impl(context):
     file = local_videos[0]
     assert_that(track.url, is_(file.url))
     assert_that(track.title, is_(os.path.split(file.url)[1]))
-    assert_that(track.length, is_(str(file.length)))
+    assert_that(track.length, is_(file.length))

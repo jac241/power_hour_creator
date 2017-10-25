@@ -24,7 +24,7 @@ class Track:
 
     url = attr.ib()
     title = attr.ib()
-    length = attr.ib(convert=str)
+    length = attr.ib()
     full_song = attr.ib(default=False)
     _start_time = attr.ib(convert=Decimal, default=DEFAULT_START_TIME)
 
@@ -132,7 +132,13 @@ class FindMediaDescriptionService:
         return self._url and self._url.strip()
 
 
-PowerHour = namedtuple('PowerHour', 'tracks path is_video name')
+# PowerHour = namedtuple('PowerHour', 'tracks path is_video name')
+class PowerHour:
+    def __init__(self, tracks, name, path=None, is_video=None):
+        self.tracks = tracks
+        self.name = name
+        self.path = path
+        self.is_video = is_video
 
 
 class MediaFile:

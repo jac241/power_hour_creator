@@ -1,3 +1,6 @@
+import os
+from collections import namedtuple
+
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QLineEdit
@@ -5,6 +8,26 @@ from decimal import Decimal
 
 from power_hour_creator import config
 from power_hour_creator.ui.tracklist import TracklistModel
+from tests.config import SUPPORT_PATH
+
+Track = namedtuple('Track', 'url length')
+remote_tracks = [
+    Track('https://www.youtube.com/watch?v=EK_voX9LaPA', 105),
+    Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
+]
+remote_videos = [
+    Track('https://www.youtube.com/watch?v=XSVunk2LUAo', 202),
+    Track('https://www.youtube.com/watch?v=JzkvgqTcmmY', 110)
+]
+local_videos = [
+    Track(
+        url=os.path.join(SUPPORT_PATH, 'videos', "cc_roller_coaster.mp4"),
+        length=32
+    )
+]
+
+def get_local_video():
+    return local_videos[0]
 
 
 class TracklistTestModel:
@@ -12,7 +35,7 @@ class TracklistTestModel:
         self._tracks = []
         self.tracklist = tracklist
 
-    def add_track(self, track, full_song, pos):
+    def add_track(self, track, full_song=False, pos=None):
         self._tracks.append(track)
 
         viewport = self.tracklist.viewport()
@@ -71,7 +94,7 @@ class TracklistTestModel:
     @property
     def power_hour_length(self):
         length = 0
-        tracks = (TestTrack(t) for t in self.tracklist.model().tracks)
+        tracks = (TestTrack(t) for t in self.tracks)
         for track in tracks:
             if track.full_song:
                 length += track.length
@@ -79,9 +102,22 @@ class TracklistTestModel:
                 length += min(config.track_length, track.length - track.start_time)
         return account_for_rounding(length)
 
+    @property
+    def tracks(self):
+        return self.tracklist.model().tracks
+
 
 def account_for_rounding(length):
     return length - 1
+
+
+def tracklist_cell_pos(context, row, column):
+    tracklist = context.main_window.tracklist
+
+    return QPoint(
+        tracklist.columnViewportPosition(column),
+        tracklist.rowViewportPosition(row)
+    )
 
 
 class TestTrack:
@@ -100,11 +136,3 @@ class TestTrack:
     def start_time(self):
         return self.track.start_time
 
-
-def tracklist_cell_pos(context, row, column):
-    tracklist = context.main_window.tracklist
-
-    return QPoint(
-        tracklist.columnViewportPosition(column),
-        tracklist.rowViewportPosition(row)
-    )

@@ -1,17 +1,19 @@
-import os
 import glob
+import os
+import sys
 from contextlib import suppress
 
 from PyQt5.QtSql import QSqlQuery
+from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 
 import power_hour_creator.config
-from power_hour_creator import power_hour_creator, config, boot, media
-from PyQt5.QtTest import QTest
-
+from power_hour_creator import power_hour_creator, config, boot
+from power_hour_creator.boot import bootstrap_app_environment
+from power_hour_creator.ui.main_window import build_main_window
+from tests.config import SUPPORT_PATH
 from tests.features.models import TracklistTestModel
 
-SUPPORT_PATH = os.path.join(config.ROOT_DIR, "..", "tests", "support")
 
 def before_all(context):
     config.phc_env = 'test'
@@ -36,26 +38,28 @@ def before_scenario(context, scenario):
 
 def after_scenario(context, scenario):
     close_app(context)
-    delete_export_files(context)
+    delete_export_files()
     clean_database()
 
 
 def launch_app(context):
-    app = power_hour_creator.launch_app(QApplication([]))
-    context.main_window = app.main_window
+    app = QApplication(sys.argv)
+    bootstrap_app_environment()
+    context.main_window = build_main_window(app)
     context.tracklist = context.main_window.tracklist
     context.app = app
+    context.main_window.show()
 
 
 def close_app(context):
     del context.app
 
 
-def delete_export_files(context):
-    for ext in [config.AUDIO_FORMAT, config.VIDEO_FORMAT]:
+def delete_export_files():
+    for ext in [config.AUDIO_FORMAT, config.VIDEO_FORMAT, 'json']:
         export_files = glob.glob(
             os.path.join(
-                context.support_path,
+                SUPPORT_PATH,
                 "exports/*.{}".format(ext)
             )
         )

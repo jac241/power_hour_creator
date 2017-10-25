@@ -103,7 +103,10 @@ class Ui_mainWindow(object):
         self.actionShow_logs.setObjectName("actionShow_logs")
         self.actionNew_Power_Hour = QtWidgets.QAction(mainWindow)
         self.actionNew_Power_Hour.setObjectName("actionNew_Power_Hour")
+        self.action_Export_Current_Tracklist = QtWidgets.QAction(mainWindow)
+        self.action_Export_Current_Tracklist.setObjectName("action_Export_Current_Tracklist")
         self.menuFile.addAction(self.actionNew_Power_Hour)
+        self.menuFile.addAction(self.action_Export_Current_Tracklist)
         self.menuHelp.addAction(self.actionShow_logs)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
@@ -119,11 +122,12 @@ class Ui_mainWindow(object):
         self.optionsSectionLabel.setText(_translate("mainWindow", "Power Hour Options:"))
         self.videoCheckBox.setText(_translate("mainWindow", "Video?"))
         self.createPowerHourButton.setText(_translate("mainWindow", "Create Power Hour!"))
-        self.menuFile.setTitle(_translate("mainWindow", "File"))
-        self.menuHelp.setTitle(_translate("mainWindow", "Help"))
+        self.menuFile.setTitle(_translate("mainWindow", "&File"))
+        self.menuHelp.setTitle(_translate("mainWindow", "&Help"))
         self.actionShow_logs.setText(_translate("mainWindow", "Show logs"))
-        self.actionNew_Power_Hour.setText(_translate("mainWindow", "New Power Hour"))
+        self.actionNew_Power_Hour.setText(_translate("mainWindow", "&New Power Hour"))
         self.actionNew_Power_Hour.setShortcut(_translate("mainWindow", "Ctrl+N"))
+        self.action_Export_Current_Tracklist.setText(_translate("mainWindow", "&Export Current Tracklist"))
 
 from power_hour_creator.ui.power_hour_list import PowerHourListView
 from power_hour_creator.ui.tracklist import Tracklist

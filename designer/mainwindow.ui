@@ -175,13 +175,14 @@
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="actionNew_Power_Hour"/>
+    <addaction name="action_Export_Current_Tracklist"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="actionShow_logs"/>
    </widget>
@@ -196,10 +197,15 @@
   </action>
   <action name="actionNew_Power_Hour">
    <property name="text">
-    <string>New Power Hour</string>
+    <string>&amp;New Power Hour</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="action_Export_Current_Tracklist">
+   <property name="text">
+    <string>&amp;Export Current Tracklist</string>
    </property>
   </action>
  </widget>

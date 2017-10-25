@@ -3,6 +3,7 @@ import os
 import sys
 from glob import glob
 
+from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtWidgets import QMessageBox
 
 from power_hour_creator import config
@@ -204,7 +205,10 @@ def ensure_db_folder_exists():
     os.makedirs(config.APP_DIRS.user_data_dir, exist_ok=True)
 
 
-def bootstrap_app():
+def bootstrap_app_environment():
+    QCoreApplication.setOrganizationName(config.APP_AUTHOR)
+    QCoreApplication.setApplicationName(config.APP_NAME)
+
     setup_logging()
     setup_database()
 
