@@ -21,8 +21,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 sys.excepthook = handle_exception
 
 
-def launch_app():
-    app = QtWidgets.QApplication(sys.argv)
+def launch_app(app):
     QCoreApplication.setOrganizationName(config.APP_AUTHOR)
     QCoreApplication.setApplicationName(config.APP_NAME)
 
@@ -40,7 +39,7 @@ def launch_app():
 
 
 def main():
-    app = launch_app()
+    app = launch_app(QtWidgets.QApplication(sys.argv))
 
     sys.exit(app.exec_())
 

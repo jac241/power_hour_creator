@@ -22,7 +22,7 @@ from power_hour_creator.ui.tracklist import DisplayTime, \
 from tests.features.environment import close_app, launch_app
 from tests.features.steps.global_steps import add_remote_song_to_tracklist, \
     add_local_song_to_tracklist, local_videos
-from tests.features.models import tracklist_cell_pos
+from tests.features.models import tracklist_cell_pos, TracklistTestModel
 
 track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 new_ph_name = "My Power Hour"
@@ -47,7 +47,9 @@ def step_impl(context):
 
 
 def assert_power_hour_is_correct_length(context):
-    assert_that(duration(context.export_path), greater_than_or_equal_to(context.prhr_length))
+    assert_that(
+        duration(context.export_path),
+        greater_than_or_equal_to(context.tracklist_test_model.power_hour_length))
 
 
 @then("that power hour should have been created")
@@ -117,13 +119,7 @@ def step_impl(context, track_num, start_time):
 
 
 def set_track_start_time(context, start_time, track_num):
-    cell = tracklist_cell_pos(context,
-                              row=int(track_num),
-                              column=TracklistModel.Columns.start_time)
-    QTest.mouseClick(context.tracklist.viewport(), Qt.LeftButton, pos=cell)
-    QTest.keyClicks(context.tracklist.viewport().focusWidget(), start_time)
-    QTest.keyClick(context.tracklist.viewport().focusWidget(), Qt.Key_Return)
-
+    context.tracklist_test_model.set_track_start_time(track_num, start_time)
 
 @when("I forget to add a track to the power hour")
 def step_impl(context):

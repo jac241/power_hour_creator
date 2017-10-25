@@ -3,6 +3,7 @@ import glob
 from contextlib import suppress
 
 from PyQt5.QtSql import QSqlQuery
+from PyQt5.QtWidgets import QApplication
 
 import power_hour_creator.config
 from power_hour_creator import power_hour_creator, config, boot, media
@@ -23,12 +24,13 @@ def after_step(context, step):
 
 def before_scenario(context, scenario):
     config.phc_env = 'test'
+    config.track_length = 5
 
     launch_app(context)
     context.support_path = SUPPORT_PATH
     context.num_tracks = 0
     context.prhr_length = 0
-    context.tracklist_test_model = TracklistTestModel(context)
+    context.tracklist_test_model = TracklistTestModel(context.main_window.tracklist)
     QTest.qWaitForWindowActive(context.main_window)
 
 
@@ -39,7 +41,7 @@ def after_scenario(context, scenario):
 
 
 def launch_app(context):
-    app = power_hour_creator.launch_app()
+    app = power_hour_creator.launch_app(QApplication([]))
     context.main_window = app.main_window
     context.tracklist = context.main_window.tracklist
     context.app = app
