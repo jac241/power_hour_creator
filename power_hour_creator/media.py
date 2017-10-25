@@ -132,7 +132,6 @@ class FindMediaDescriptionService:
         return self._url and self._url.strip()
 
 
-# PowerHour = namedtuple('PowerHour', 'tracks path is_video name')
 class PowerHour:
     def __init__(self, tracks, name, path=None, is_video=None):
         self.tracks = tracks
@@ -501,3 +500,10 @@ def build_audio_normalizer(output_paths):
     }
 
     return FFmpegNormalize(args)
+
+
+def as_tracklist_dict(power_hour):
+    return {
+        'name': power_hour.name,
+        'tracks': [attr.asdict(t) for t in power_hour.tracks]
+    }

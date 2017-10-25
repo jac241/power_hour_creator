@@ -9,7 +9,7 @@ from power_hour_creator.ui.forms.power_hour_export_dialog import \
     Ui_PowerHourExportDialog
 
 
-class PowerHourExportThread(QThread):
+class PowerHourCreationThread(QThread):
 
     progress = pyqtSignal(int)
     new_track_downloading = pyqtSignal(object)
@@ -57,7 +57,7 @@ class PowerHourExportThread(QThread):
         self.service.cancel_export()
 
 
-class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
+class CreatePowerHourDialog(QDialog, Ui_PowerHourExportDialog):
 
     DOT_BLINK_TIME_IN_MS = 250
 
@@ -118,11 +118,11 @@ class ExportPowerHourDialog(QDialog, Ui_PowerHourExportDialog):
         self.currentSongProgressBar.setValue(downloaded_bytes)
 
 
-def export_power_hour_in_background(power_hour,
+def create_power_hour_in_background(power_hour,
                                     parent_widget,
                                     export_progress_view):
-    thread = PowerHourExportThread(parent_widget, power_hour)
-    progress_dialog = ExportPowerHourDialog(parent_widget, power_hour)
+    thread = PowerHourCreationThread(parent_widget, power_hour)
+    progress_dialog = CreatePowerHourDialog(parent_widget, power_hour)
     progress_dialog.cancelButton.clicked.connect(thread.cancel_export)
 
     thread.progress.connect(progress_dialog.overallProgressBar.setValue)
@@ -138,10 +138,10 @@ def export_power_hour_in_background(power_hour,
 
 
 def get_power_hour_export_path(parent, is_video):
-    return ExportLocator(export_is_video=is_video, parent=parent).get_save_file_name()
+    return PowerHourOutputLocator(export_is_video=is_video, parent=parent).get_save_file_name()
 
 
-class ExportLocator:
+class PowerHourOutputLocator:
     default_vid_dir = {
         'darwin': '~/Movies',
         'windows': '~/Videos'

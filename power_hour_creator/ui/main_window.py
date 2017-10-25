@@ -1,18 +1,17 @@
-import simplejson as json
+import os
 import os
 import subprocess
 
-import attr
 from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy, \
-    QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy
 
 from power_hour_creator import config
 from power_hour_creator.media import PowerHour
 from power_hour_creator.resources import image_path
-from power_hour_creator.ui.exporting import export_power_hour_in_background, \
+from power_hour_creator.ui.creation import create_power_hour_in_background, \
     get_power_hour_export_path
+from power_hour_creator.ui.export import export_tracklist
 from power_hour_creator.ui.power_hour_list import PowerHourModel
 from power_hour_creator.ui.tracklist import TrackDelegate, TracklistModel
 from .forms.mainwindow import Ui_mainWindow
@@ -125,7 +124,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                 name=self._current_power_hour_name()
             )
 
-            export_power_hour_in_background(
+            create_power_hour_in_background(
                 power_hour=power_hour,
                 parent_widget=self,
                 export_progress_view=self
@@ -261,32 +260,3 @@ def show_log_folder_in_file_browser():
         subprocess.check_call(['open', config.APP_DIRS.user_log_dir])
 
 
-def export_tracklist(parent_widget, power_hour):
-    export_path, _ = get_tracklist_export_path(parent_widget=parent_widget)
-
-    if not export_path:
-        return
-
-    with open(export_path, 'w') as json_file:
-        json.dump(
-            obj=as_tracklist_dict(power_hour),
-            fp=json_file,
-            use_decimal=True,
-            indent=4 * ' '
-        )
-
-
-def get_tracklist_export_path(parent_widget):
-    return QFileDialog.getSaveFileName(
-            parent_widget,
-            'Export Tracklist',
-            os.path.expanduser('~/Documents'),
-            'Power Hour Tracklists (*.json)',
-    )
-
-
-def as_tracklist_dict(power_hour):
-    return {
-        'name': power_hour.name,
-        'tracks': [attr.asdict(t) for t in power_hour.tracks]
-    }

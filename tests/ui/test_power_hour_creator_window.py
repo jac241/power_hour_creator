@@ -3,7 +3,7 @@ from unittest import TestCase
 from PyQt5.QtWidgets import QApplication
 
 from power_hour_creator.media import PowerHour
-from power_hour_creator.ui.exporting import ExportPowerHourDialog
+from power_hour_creator.ui.creation import CreatePowerHourDialog
 from tests.ui.support import QtTestCase
 
 
@@ -20,7 +20,7 @@ class TestExportPowerHourDialog(QtTestCase):
             name=self.power_hour_name
         )
 
-        self.uut = ExportPowerHourDialog(
+        self.uut = CreatePowerHourDialog(
             parent=None,
             power_hour=self.power_hour
         )

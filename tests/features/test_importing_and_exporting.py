@@ -9,7 +9,7 @@ from decimal import Decimal
 from PyQt5.QtWidgets import QApplication
 
 from power_hour_creator import config
-import power_hour_creator.ui.main_window
+import power_hour_creator.ui.export
 from power_hour_creator.boot import bootstrap_app_environment
 from power_hour_creator.ui.main_window import build_main_window
 from power_hour_creator.ui.power_hour_list import DEFAULT_PR_HR_NAME
@@ -76,7 +76,7 @@ def test_exporting_power_hour_creates_json_file(
     export_path = os.path.join(SUPPORT_PATH, 'exports', 'test.json')
 
     monkeypatch.setattr(
-        target=power_hour_creator.ui.main_window,
+        target=power_hour_creator.ui.export,
         name='get_tracklist_export_path',
         value=lambda parent_widget: (export_path, '')
     )

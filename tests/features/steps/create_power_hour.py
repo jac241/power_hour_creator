@@ -15,8 +15,8 @@ from youtube_dl import DownloadError
 
 from power_hour_creator import config
 from power_hour_creator.media import MediaFile
-from power_hour_creator.ui import exporting, main_window
-from power_hour_creator.ui.exporting import ExportPowerHourDialog
+from power_hour_creator.ui import creation, main_window
+from power_hour_creator.ui.creation import CreatePowerHourDialog
 from power_hour_creator.ui.tracklist import DisplayTime, \
     DEFAULT_NUM_TRACKS, TracklistModel
 from tests.features.environment import close_app, launch_app
@@ -78,7 +78,7 @@ def export_dialog_visible(context):
 
 def get_export_dialog(context):
     return next((w for w in context.app.topLevelWidgets() if
-                 type(w) is ExportPowerHourDialog), None)
+                 type(w) is CreatePowerHourDialog), None)
 
 
 @step("I should see the power hour created message")
