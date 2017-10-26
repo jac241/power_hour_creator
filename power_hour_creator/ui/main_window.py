@@ -11,9 +11,10 @@ from power_hour_creator.media import PowerHour
 from power_hour_creator.resources import image_path
 from power_hour_creator.ui.creation import create_power_hour_in_background, \
     get_power_hour_export_path
-from power_hour_creator.ui.export import export_tracklist
+from power_hour_creator.ui.tracklist_export import export_tracklist_to_file
 from power_hour_creator.ui.power_hour_list import PowerHourModel
 from power_hour_creator.ui.tracklist import TrackDelegate, TracklistModel
+from power_hour_creator.ui.tracklist_import import import_tracklist_from_file
 from .forms.mainwindow import Ui_mainWindow
 
 ERROR_DISPLAY_TIME_IN_MS = 5000
@@ -154,10 +155,18 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                 name=self._current_power_hour_name()
             )
 
-            export_tracklist(parent_widget=self, power_hour=ph)
+            export_tracklist_to_file(parent_widget=self, power_hour=ph)
+
+        def import_tracklist():
+            import_tracklist_from_file(
+                parent_widget=self,
+                phs_list_model=self.power_hour_model,
+                tracklist_model=self.tracklist_model
+            )
 
         self.actionNew_Power_Hour.triggered.connect(new_power_hour)
         self.action_Export_Current_Tracklist.triggered.connect(export_current_tracklist)
+        self.action_Import_Tracklist.triggered.connect(import_tracklist)
 
     def _connect_power_hour_list_view(self):
         def show_power_hour_name(new_index, _=None):

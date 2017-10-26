@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 
 import attr
 import delegator
+import simplejson as json
 from youtube_dl import YoutubeDL, DownloadError
 
 from ffmpeg_normalize.__main__ import FFmpegNormalize
@@ -47,6 +48,16 @@ class Track:
             length=record.value("length"),
             full_song=record.value("full_song"),
             start_time=record.value("start_time")
+        )
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            url=d['url'],
+            title=d['title'],
+            length=d['length'],
+            full_song=d['full_song'],
+            start_time=d['_start_time']
         )
 
 
@@ -138,6 +149,14 @@ class PowerHour:
         self.name = name
         self.path = path
         self.is_video = is_video
+
+    @classmethod
+    def from_import(cls, tracklist):
+        return cls(
+            name=tracklist['name'],
+            tracks=[Track.from_dict(d) for d in tracklist['tracks']]
+        )
+
 
 
 class MediaFile:
@@ -502,8 +521,22 @@ def build_audio_normalizer(output_paths):
     return FFmpegNormalize(args)
 
 
+def export_power_hour_to_json(json_file, power_hour):
+    json.dump(
+        obj=serialize_to_dict(power_hour),
+        fp=json_file,
+        use_decimal=True,
+        indent=4 * ' '
+    )
+
+
 def serialize_to_dict(power_hour):
     return {
         'name': power_hour.name,
         'tracks': [attr.asdict(t) for t in power_hour.tracks]
     }
+
+
+def get_tracklist_from_file(import_path):
+    with open(import_path, 'r') as f:
+        return json.load(fp=f, use_decimal=True)

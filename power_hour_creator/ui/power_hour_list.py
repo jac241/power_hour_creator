@@ -12,10 +12,10 @@ class PowerHourModel(QSqlTableModel):
         self.setEditStrategy(QSqlTableModel.OnFieldChange)
         self.select()
 
-    def add_power_hour(self):
+    def add_power_hour(self, name=DEFAULT_PR_HR_NAME):
         row = self.rowCount()
         self.insertRow(row)
-        self.setData(self.index(row, 1), DEFAULT_PR_HR_NAME)
+        self.setData(self.index(row, 1), name)
         self.submitAll()
         return self.index(row, 0).data()
 

@@ -179,6 +179,7 @@
     </property>
     <addaction name="actionNew_Power_Hour"/>
     <addaction name="action_Export_Current_Tracklist"/>
+    <addaction name="action_Import_Tracklist"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -206,6 +207,11 @@
   <action name="action_Export_Current_Tracklist">
    <property name="text">
     <string>&amp;Export Current Tracklist</string>
+   </property>
+  </action>
+  <action name="action_Import_Tracklist">
+   <property name="text">
+    <string>&amp;Import Tracklist</string>
    </property>
   </action>
  </widget>

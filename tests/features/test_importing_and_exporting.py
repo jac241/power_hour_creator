@@ -9,7 +9,7 @@ from decimal import Decimal
 from PyQt5.QtWidgets import QApplication
 
 from power_hour_creator import config
-import power_hour_creator.ui.export
+import power_hour_creator.ui.tracklist_export
 from power_hour_creator.boot import bootstrap_app_environment
 from power_hour_creator.ui.main_window import build_main_window
 from power_hour_creator.ui.power_hour_list import DEFAULT_PR_HR_NAME
@@ -19,17 +19,8 @@ from tests.features.models import TracklistTestModel, get_local_video
 from tests.ui.test_power_hour_list import MockSettings
 
 
-@pytest.fixture(autouse=True)
-def monkeypatch_settings(monkeypatch):
-    monkeypatch.setattr(
-        target=power_hour_creator.config,
-        name='persistent_settings',
-        value=lambda: MockSettings()
-    )
-
-
 @pytest.yield_fixture
-def ph_app(monkeypatch):
+def ph_app():
     app = QApplication(sys.argv)
     config.phc_env = 'test'
     bootstrap_app_environment()
@@ -72,7 +63,10 @@ class MainWindowComponent(object):
                 f'Action "{action_name}" not found in {menu.objectName()}')
 
     def import_power_hour(self, import_path):
-        pass
+        self.trigger_menu_action(
+            action_name='&Import Tracklist',
+            menu=self.main_window.menuFile
+        )
 
 @pytest.fixture
 def main_window_component(main_window):
@@ -91,7 +85,7 @@ def test_exporting_power_hour_creates_json_file(
     export_path = os.path.join(SUPPORT_PATH, 'exports', 'test.json')
 
     monkeypatch.setattr(
-        target=power_hour_creator.ui.export,
+        target=power_hour_creator.ui.tracklist_export,
         name='get_tracklist_export_path',
         value=lambda parent_widget: (export_path, '')
     )
@@ -116,10 +110,38 @@ def test_exporting_power_hour_creates_json_file(
         }]
     }
 
+
+class PowerHourListComponent(object):
+    def __init__(self, ph_list_view):
+        self._ph_list_view = ph_list_view
+
+    @property
+    def power_hour_names(self):
+        model = self._ph_list_view.model()
+        for row in range(model.rowCount()):
+            yield model.index(row, 1).data(Qt.DisplayRole)
+
+
+@pytest.fixture
+def phs_list_component(main_window):
+    return PowerHourListComponent(main_window.powerHoursListView)
+
+
 def test_importing_power_hour_creates_a_power_hour(
-        main_window_component):
+        main_window_component,
+        phs_list_component,
+        tracklist_component,
+        monkeypatch):
     import_path = os.path.join(SUPPORT_PATH, 'tester.json')
 
+    monkeypatch.setattr(
+        target=power_hour_creator.ui.tracklist_import,
+        name='get_import_path',
+        value=lambda parent_widget: (import_path, '')
+    )
+
     main_window_component.import_power_hour(import_path)
+    assert 'Tester' in phs_list_component.power_hour_names
+    assert len(tracklist_component.tracks) == 3
 
 

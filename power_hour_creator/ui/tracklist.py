@@ -60,7 +60,6 @@ class DisplayTime:
             logger.exception('Error converting string to decimal for DisplayTime', self._time)
             raise ConversionError
 
-
     def _already_a_time_str(self):
         return ':' in str(self._time)
 
@@ -106,8 +105,6 @@ class StartTimeValidator():
                     'code': 'start_time_format_bad',
                     'start_time': start_time
                 })
-
-
 
 
 class TrackDelegate(QItemDelegate):
@@ -459,6 +456,47 @@ class TracklistModel(QSqlTableModel):
         query.bindValue(':power_hour_id', self.current_power_hour_id)
 
         self._rollback_and_error_if_unsuccessful(query.exec_())
+
+    def add_tracks_to_power_hour(self, tracks, power_hour_id):
+        self.show_tracks_for_power_hour(power_hour_id)
+        self.beginInsertRows(QModelIndex(), 0, len(tracks) - 1)
+        self.database().transaction()
+
+        for position, track in enumerate(tracks):
+            was_successful = self._insert_track(
+                position=position,
+                url=track.url,
+                title=track.title,
+                length=track.length,
+                start_time=track.start_time,
+                full_song=track.full_song,
+                power_hour_id=power_hour_id
+            )
+            self._rollback_and_error_if_unsuccessful(was_successful)
+
+        self.database().commit()
+        self.endInsertRows()
+        self.select()
+
+
+    def _insert_track(self, position, power_hour_id, url='', title='', length=0,
+                      start_time=Decimal(0.0), full_song=False):
+        query = QSqlQuery()
+
+        query.prepare(
+            "INSERT INTO tracks(position, url, title, length, start_time, full_song, power_hour_id) "
+            "VALUES (:position, :url, :title, :length, :start_time, :full_song, :power_hour_id)"
+        )
+
+        query.bindValue(":position", position)
+        query.bindValue(":url", url)
+        query.bindValue(":title", title)
+        query.bindValue(":length", length)
+        query.bindValue(":start_time", float(start_time))
+        query.bindValue(":full_song", full_song)
+        query.bindValue(":power_hour_id", power_hour_id)
+
+        return query.exec_()
 
 
 class Tracklist(QTableView):
