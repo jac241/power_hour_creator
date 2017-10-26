@@ -3,7 +3,7 @@ import os
 import simplejson as json
 from PyQt5.QtWidgets import QFileDialog
 
-from power_hour_creator.media import as_tracklist_dict
+from power_hour_creator.media import serialize_to_dict
 
 
 def export_tracklist(parent_widget, power_hour):
@@ -13,12 +13,16 @@ def export_tracklist(parent_widget, power_hour):
         return
 
     with open(export_path, 'w') as json_file:
-        json.dump(
-            obj=as_tracklist_dict(power_hour),
-            fp=json_file,
-            use_decimal=True,
-            indent=4 * ' '
-        )
+        export_power_hour_to_json(json_file, power_hour)
+
+
+def export_power_hour_to_json(json_file, power_hour):
+    json.dump(
+        obj=serialize_to_dict(power_hour),
+        fp=json_file,
+        use_decimal=True,
+        indent=4 * ' '
+    )
 
 
 def get_tracklist_export_path(parent_widget):

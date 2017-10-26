@@ -1,0 +1,26 @@
+{
+    "name": "Tester",
+    "tracks": [
+        {
+            "url": "https://vimeo.com/238328937",
+            "title": "Agent of Connection",
+            "length": 221,
+            "full_song": 0,
+            "_start_time": 0
+        },
+        {
+            "url": "https://www.youtube.com/watch?v=bWXazVhlyxQ",
+            "title": "Rage Against The Machine - Killing In the Name",
+            "length": 316,
+            "full_song": 0,
+            "_start_time": 240
+        },
+        {
+            "url": "https://www.youtube.com/watch?v=TjWAWcx4xdE",
+            "title": "Clipse - Grindin'",
+            "length": 246,
+            "full_song": 1,
+            "_start_time": 0
+        }
+    ]
+}

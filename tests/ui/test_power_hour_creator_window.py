@@ -1,31 +1,26 @@
-from unittest import TestCase
-
-from PyQt5.QtWidgets import QApplication
+import pytest
 
 from power_hour_creator.media import PowerHour
 from power_hour_creator.ui.creation import CreatePowerHourDialog
-from tests.ui.support import QtTestCase
 
 
-class TestExportPowerHourDialog(QtTestCase):
+@pytest.fixture
+def power_hour():
+    return PowerHour(
+        tracks=[],
+        path='~',
+        is_video=True,
+        name='MyPowerHour'
+    )
 
-    def setUp(self):
-        super().setUp()
 
-        self.power_hour_name = 'MyPowerHour'
-        self.power_hour = PowerHour(
-            tracks=[],
-            path='~',
-            is_video=True,
-            name=self.power_hour_name
-        )
+@pytest.fixture
+def create_power_hour_dialog(qtbot, power_hour):
 
-        self.uut = CreatePowerHourDialog(
-            parent=None,
-            power_hour=self.power_hour
-        )
+    dlg = CreatePowerHourDialog(parent=None, power_hour=power_hour)
+    qtbot.add_widget(dlg)
+    return dlg
 
-    def test_init_should_set_title_from_power_hour(self):
-        self.assertEqual(
-            self.uut.windowTitle(),
-            "Exporting: {}".format(self.power_hour_name))
+
+def test_init_should_set_title_from_power_hour(create_power_hour_dialog):
+    assert create_power_hour_dialog.windowTitle() == 'Exporting: MyPowerHour'

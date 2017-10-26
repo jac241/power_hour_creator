@@ -31,7 +31,7 @@ def main():
     logger.info("Launching GUI")
     logger.info("Showing main window")
 
-    main_window = build_main_window(app)
+    main_window = build_main_window()
     main_window.show_with_last_full_screen_setting()
 
     sys.exit(app.exec_())

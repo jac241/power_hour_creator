@@ -16,10 +16,20 @@ from power_hour_creator.ui.power_hour_list import DEFAULT_PR_HR_NAME
 from tests.config import SUPPORT_PATH
 from tests.features.environment import delete_export_files, clean_database
 from tests.features.models import TracklistTestModel, get_local_video
+from tests.ui.test_power_hour_list import MockSettings
+
+
+@pytest.fixture(autouse=True)
+def monkeypatch_settings(monkeypatch):
+    monkeypatch.setattr(
+        target=power_hour_creator.config,
+        name='persistent_settings',
+        value=lambda: MockSettings()
+    )
 
 
 @pytest.yield_fixture
-def ph_app():
+def ph_app(monkeypatch):
     app = QApplication(sys.argv)
     config.phc_env = 'test'
     bootstrap_app_environment()
@@ -28,11 +38,14 @@ def ph_app():
 
     delete_export_files()
     clean_database()
+    del app
+
 
 @pytest.fixture
-def main_window(ph_app):
-    mw = build_main_window(ph_app)
+def main_window(ph_app, qtbot):
+    mw = build_main_window()
     mw.show()
+    qtbot.add_widget(mw)
     return mw
 
 
@@ -58,6 +71,8 @@ class MainWindowComponent(object):
             raise RuntimeError(
                 f'Action "{action_name}" not found in {menu.objectName()}')
 
+    def import_power_hour(self, import_path):
+        pass
 
 @pytest.fixture
 def main_window_component(main_window):
@@ -100,4 +115,11 @@ def test_exporting_power_hour_creates_json_file(
             '_start_time': Decimal(15.45),
         }]
     }
+
+def test_importing_power_hour_creates_a_power_hour(
+        main_window_component):
+    import_path = os.path.join(SUPPORT_PATH, 'tester.json')
+
+    main_window_component.import_power_hour(import_path)
+
 

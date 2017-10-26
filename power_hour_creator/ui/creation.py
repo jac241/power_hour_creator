@@ -4,7 +4,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtWidgets import QDialog, QFileDialog
 
 from power_hour_creator import config
-from power_hour_creator.media import PowerHourExportService
+from power_hour_creator.media import CreatePowerHourService
 from power_hour_creator.ui.forms.power_hour_export_dialog import \
     Ui_PowerHourExportDialog
 
@@ -25,7 +25,7 @@ class PowerHourCreationThread(QThread):
         self._is_cancelled = False
 
     def run(self):
-        self.service = PowerHourExportService(
+        self.service = CreatePowerHourService(
             power_hour=self._power_hour,
             progress_listener=self
         )
@@ -54,7 +54,7 @@ class PowerHourCreationThread(QThread):
 
     def cancel_export(self):
         self._is_cancelled = True
-        self.service.cancel_export()
+        self.service.cancel()
 
 
 class CreatePowerHourDialog(QDialog, Ui_PowerHourExportDialog):

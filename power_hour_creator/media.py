@@ -198,21 +198,21 @@ class MediaFile:
         return json.loads(output)
 
 
-class PowerHourExportService:
+class CreatePowerHourService:
     def __init__(self, power_hour, progress_listener):
         self._power_hour = power_hour
         self._progress_listener = progress_listener
 
         self._logger = logging.getLogger(__name__)
-        self._export_was_cancelled = False
+        self._creation_was_cancelled = False
         self.did_error = False
 
     def execute(self):
         with TemporaryDirectory() as temporary_dir:
             self._export_power_hour(download_dir=temporary_dir)
 
-    def cancel_export(self):
-        self._export_was_cancelled = True
+    def cancel(self):
+        self._creation_was_cancelled = True
 
     def _export_power_hour(self, download_dir):
         processor = self._build_media_processor(download_dir)
@@ -220,25 +220,25 @@ class PowerHourExportService:
 
         try:
             for media_file in media_files:
-                if self._export_was_cancelled:
+                if self._creation_was_cancelled:
                     break
 
                 self._download_media_file(media_file)
 
-                if self._export_was_cancelled:
+                if self._creation_was_cancelled:
                     break
 
                 self._process_media_file(media_file, processor)
 
 
-            if not self._export_was_cancelled:
+            if not self._creation_was_cancelled:
                 normalize_audio(media_files)
 
-            if not self._export_was_cancelled:
+            if not self._creation_was_cancelled:
                 output_paths = [f.output_path for f in media_files]
                 processor.merge_files_into_power_hour(output_paths, self._power_hour.path)
 
-            if self._export_was_cancelled:  # can be cancelled at any time
+            if self._creation_was_cancelled:  # can be cancelled at any time
                 self._handle_cancellation()
 
         except subprocess.CalledProcessError as e:
@@ -502,7 +502,7 @@ def build_audio_normalizer(output_paths):
     return FFmpegNormalize(args)
 
 
-def as_tracklist_dict(power_hour):
+def serialize_to_dict(power_hour):
     return {
         'name': power_hour.name,
         'tracks': [attr.asdict(t) for t in power_hour.tracks]

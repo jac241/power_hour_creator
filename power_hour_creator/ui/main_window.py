@@ -241,11 +241,11 @@ class TrackErrorDispatch(QObject):
     track_invalid = pyqtSignal(dict)
 
 
-def build_main_window(parent):
+def build_main_window():
     track_error_dispatcher = TrackErrorDispatch()
     return MainWindow(
-        power_hour_model=PowerHourModel(parent=parent),
-        tracklist_model=TracklistModel(parent=parent),
+        power_hour_model=PowerHourModel(),
+        tracklist_model=TracklistModel(),
         tracklist_delegate=TrackDelegate(
             track_error_dispatcher=track_error_dispatcher
         ),
