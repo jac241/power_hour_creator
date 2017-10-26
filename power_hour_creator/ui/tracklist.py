@@ -213,7 +213,8 @@ class TrackDelegate(QItemDelegate):
 
 
 class DbError(IOError):
-    pass
+    def __init__(self, *args):
+        super().__init__(*args)
 
 
 class TracklistModel(QSqlTableModel):
@@ -414,8 +415,11 @@ class TracklistModel(QSqlTableModel):
             self._handle_database_error()
 
     def _handle_database_error(self):
+        error_text = self.database().lastError().databaseText()
+
+        # Rollback after so lastError doesn't get cleared
         self.database().rollback()
-        raise DbError(self.database().lastError().databaseText())
+        raise DbError(error_text)
 
     def remove_track_accounting_for_existing_tracks(self, position):
         self.beginRemoveRows(QModelIndex(), position, position)
@@ -450,9 +454,18 @@ class TracklistModel(QSqlTableModel):
         query = QSqlQuery()
         query.prepare(
             'UPDATE tracks '
-            'SET position = position -1 '
+            'SET position = -(position - 1) '
             'WHERE position > :position AND power_hour_id = :power_hour_id')
         query.bindValue(':position', position)
+        query.bindValue(':power_hour_id', self.current_power_hour_id)
+
+        self._rollback_and_error_if_unsuccessful(query.exec_())
+
+        query.prepare(
+            'UPDATE tracks '
+            'SET position = -(position) '
+            'WHERE position < 0 AND power_hour_id = :power_hour_id'
+        )
         query.bindValue(':power_hour_id', self.current_power_hour_id)
 
         self._rollback_and_error_if_unsuccessful(query.exec_())

@@ -1,22 +1,25 @@
-import simplejson as json
 import os
 import sys
-import pytest
-from PyQt5.QtCore import Qt
-from PyQt5.QtTest import QTest
 from decimal import Decimal
 
+import pytest
+import simplejson as json
+from PyQt5.QtCore import Qt
+from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 
-from power_hour_creator import config
 import power_hour_creator.ui.tracklist_export
+from power_hour_creator import config
 from power_hour_creator.boot import bootstrap_app_environment
 from power_hour_creator.ui.main_window import build_main_window
 from power_hour_creator.ui.power_hour_list import DEFAULT_PR_HR_NAME
 from tests.config import SUPPORT_PATH
 from tests.features.environment import delete_export_files, clean_database
-from tests.features.models import TracklistTestModel, get_local_video
-from tests.ui.test_power_hour_list import MockSettings
+from tests.features.models import TracklistTestModel, get_local_video, \
+    trigger_menu_action
+
+import_path = os.path.join(SUPPORT_PATH, 'tester.json')
+export_path = os.path.join(SUPPORT_PATH, 'exports', 'test.json')
 
 
 @pytest.yield_fixture
@@ -45,25 +48,15 @@ class MainWindowComponent(object):
         self.main_window = main_window
 
     def export_power_hour(self, export_path):
-        self.trigger_menu_action(
+        QTest.keyClick(self.main_window, 'F', Qt.AltModifier)
+        trigger_menu_action(
             action_name='&Export Current Tracklist',
             menu=self.main_window.menuFile
         )
 
-    def trigger_menu_action(self, action_name, menu):
-        # https://stackoverflow.com/questions/16536286/qt-ui-testing-how-to-simulate-a-click-on-a-qmenubar-item-using-qtest
-        QTest.keyClick(self.main_window, 'F', Qt.AltModifier)
-        for action in menu.actions():
-            if action.text() == action_name:
-                QTest.keyClick(menu, Qt.Key_Enter)
-                break
-            QTest.keyClick(menu, Qt.Key_Down)
-        else:
-            raise RuntimeError(
-                f'Action "{action_name}" not found in {menu.objectName()}')
-
     def import_power_hour(self, import_path):
-        self.trigger_menu_action(
+        QTest.keyClick(self.main_window, 'F', Qt.AltModifier)
+        trigger_menu_action(
             action_name='&Import Tracklist',
             menu=self.main_window.menuFile
         )
@@ -82,7 +75,6 @@ def test_exporting_power_hour_creates_json_file(
         main_window_component,
         tracklist_component,
         monkeypatch):
-    export_path = os.path.join(SUPPORT_PATH, 'exports', 'test.json')
 
     monkeypatch.setattr(
         target=power_hour_creator.ui.tracklist_export,
@@ -132,16 +124,35 @@ def test_importing_power_hour_creates_a_power_hour(
         phs_list_component,
         tracklist_component,
         monkeypatch):
-    import_path = os.path.join(SUPPORT_PATH, 'tester.json')
 
+    monkeypatch_import(monkeypatch)
+
+    main_window_component.import_power_hour(import_path)
+    assert 'Tester' in phs_list_component.power_hour_names
+    assert len(tracklist_component.tracks) == 3
+
+
+def monkeypatch_import(monkeypatch):
     monkeypatch.setattr(
         target=power_hour_creator.ui.tracklist_import,
         name='get_import_path',
         value=lambda parent_widget: (import_path, '')
     )
 
+
+def test_should_be_able_to_insert_then_delete_tracks_after_import(
+        tracklist_component,
+        main_window_component,
+        monkeypatch
+    ):
+
+    monkeypatch_import(monkeypatch)
     main_window_component.import_power_hour(import_path)
-    assert 'Tester' in phs_list_component.power_hour_names
-    assert len(tracklist_component.tracks) == 3
+
+    tracklist_component.add_track_below(row=2)
+    assert tracklist_component.row_count == 4
+
+    tracklist_component.delete_track(row=2)
+    assert tracklist_component.row_count == 3
 
 

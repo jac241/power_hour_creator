@@ -45,7 +45,7 @@ def after_scenario(context, scenario):
 def launch_app(context):
     app = QApplication(sys.argv)
     bootstrap_app_environment()
-    context.main_window = build_main_window(app)
+    context.main_window = build_main_window()
     context.tracklist = context.main_window.tracklist
     context.app = app
     context.main_window.show()

@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtTest import QTest
-from PyQt5.QtWidgets import QLineEdit
+from PyQt5.QtWidgets import QLineEdit, QApplication
 from decimal import Decimal
 
 from power_hour_creator import config
@@ -106,6 +106,29 @@ class TracklistTestModel:
     def tracks(self):
         return self.tracklist.model().tracks
 
+    def add_track_below(self, row):
+        position = self._select_row(row)
+        menu = self._get_context_menu_from(position=position)
+        trigger_menu_action('Insert Track Below', menu)
+
+    def _select_row(self, row):
+        position = self.cell_pos(row, TracklistModel.Columns.length)
+        QTest.mouseClick(self.tracklist.viewport(), Qt.LeftButton, pos=position)
+        return position
+
+    def _get_context_menu_from(self, position):
+        self.tracklist._build_custom_menu(position)
+        return QApplication.activePopupWidget()
+
+    @property
+    def row_count(self):
+        return self.tracklist.model().rowCount()
+
+    def delete_track(self, row):
+        position = self._select_row(row)
+        menu = self._get_context_menu_from(position)
+        trigger_menu_action('Delete Selected Tracks', menu)
+
 
 def account_for_rounding(length):
     return length - 1
@@ -136,3 +159,13 @@ class TestTrack:
     def start_time(self):
         return self.track.start_time
 
+
+def trigger_menu_action(action_name, menu):
+    # https://stackoverflow.com/questions/16536286/qt-ui-testing-how-to-simulate-a-click-on-a-qmenubar-item-using-qtest
+    for action in menu.actions():
+        if action.text() == action_name:
+            action.trigger()
+            break
+    else:
+        raise RuntimeError(
+            f'Action "{action_name}" not found in {menu.objectName()}')
