@@ -471,7 +471,6 @@ class TracklistModel(QSqlTableModel):
         self._rollback_and_error_if_unsuccessful(query.exec_())
 
     def add_tracks_to_power_hour(self, tracks, power_hour_id):
-        self.show_tracks_for_power_hour(power_hour_id)
         self.beginInsertRows(QModelIndex(), 0, len(tracks) - 1)
         self.database().transaction()
 
@@ -490,6 +489,7 @@ class TracklistModel(QSqlTableModel):
         self.database().commit()
         self.endInsertRows()
         self.select()
+        self.show_tracks_for_power_hour(power_hour_id)
 
 
     def _insert_track(self, position, power_hour_id, url='', title='', length=0,

@@ -61,6 +61,11 @@ class MainWindowComponent(object):
             menu=self.main_window.menuFile
         )
 
+    @property
+    def create_ph_button_enabled(self):
+        return self.main_window.createPowerHourButton.isEnabled()
+
+
 @pytest.fixture
 def main_window_component(main_window):
     return MainWindowComponent(main_window)
@@ -156,3 +161,11 @@ def test_should_be_able_to_insert_then_delete_tracks_after_import(
     assert tracklist_component.row_count == 3
 
 
+def test_create_ph_button_should_be_enabled_after_import(
+        main_window_component,
+        monkeypatch):
+    monkeypatch_import(monkeypatch)
+
+    main_window_component.import_power_hour(import_path)
+
+    assert main_window_component.create_ph_button_enabled
