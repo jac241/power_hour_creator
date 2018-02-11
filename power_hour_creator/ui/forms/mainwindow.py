@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '.\designer\mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.9
+# Created by: PyQt5 UI code generator 5.7
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -107,10 +107,13 @@ class Ui_mainWindow(object):
         self.action_Export_Current_Tracklist.setObjectName("action_Export_Current_Tracklist")
         self.action_Import_Tracklist = QtWidgets.QAction(mainWindow)
         self.action_Import_Tracklist.setObjectName("action_Import_Tracklist")
+        self.actionAbout_Power_Hour_Creator = QtWidgets.QAction(mainWindow)
+        self.actionAbout_Power_Hour_Creator.setObjectName("actionAbout_Power_Hour_Creator")
         self.menuFile.addAction(self.actionNew_Power_Hour)
         self.menuFile.addAction(self.action_Export_Current_Tracklist)
         self.menuFile.addAction(self.action_Import_Tracklist)
         self.menuHelp.addAction(self.actionShow_logs)
+        self.menuHelp.addAction(self.actionAbout_Power_Hour_Creator)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
 
@@ -132,6 +135,7 @@ class Ui_mainWindow(object):
         self.actionNew_Power_Hour.setShortcut(_translate("mainWindow", "Ctrl+N"))
         self.action_Export_Current_Tracklist.setText(_translate("mainWindow", "&Export Current Tracklist"))
         self.action_Import_Tracklist.setText(_translate("mainWindow", "&Import Tracklist"))
+        self.actionAbout_Power_Hour_Creator.setText(_translate("mainWindow", "About Power Hour Creator"))
 
 from power_hour_creator.ui.power_hour_list import PowerHourListView
 from power_hour_creator.ui.tracklist import Tracklist

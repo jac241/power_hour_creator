@@ -15,6 +15,7 @@ from power_hour_creator.ui.tracklist_export import export_tracklist_to_file
 from power_hour_creator.ui.power_hour_list import PowerHourModel
 from power_hour_creator.ui.tracklist import TrackDelegate, TracklistModel
 from power_hour_creator.ui.tracklist_import import import_tracklist_from_file
+from power_hour_creator.ui.about_dialog import AboutDialog
 from .forms.mainwindow import Ui_mainWindow
 
 ERROR_DISPLAY_TIME_IN_MS = 5000
@@ -141,7 +142,12 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         def show_logs():
             show_log_folder_in_file_browser()
 
+        def show_about_dialog():
+            dialog = AboutDialog()
+            dialog.exec_()
+
         self.actionShow_logs.triggered.connect(show_logs)
+        self.actionAbout_Power_Hour_Creator.triggered.connect(show_about_dialog)
 
     def _connect_file_menu(self):
         def new_power_hour():

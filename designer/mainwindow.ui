@@ -186,6 +186,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actionShow_logs"/>
+    <addaction name="actionAbout_Power_Hour_Creator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuHelp"/>
@@ -212,6 +213,11 @@
   <action name="action_Import_Tracklist">
    <property name="text">
     <string>&amp;Import Tracklist</string>
+   </property>
+  </action>
+  <action name="actionAbout_Power_Hour_Creator">
+   <property name="text">
+    <string>About Power Hour Creator</string>
    </property>
   </action>
  </widget>
