@@ -26,7 +26,8 @@ def ffmpeg_dir():
 def platform_dir():
     options = {
         'windows': 'ffmpeg-3.2.2-win32-static',
-        'darwin': 'mac'
+        'darwin': 'mac',
+        'linux': 'linux'
     }
     return options.get(config.OS)
 

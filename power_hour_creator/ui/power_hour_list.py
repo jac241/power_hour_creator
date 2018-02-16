@@ -35,7 +35,7 @@ class PowerHourListView(QListView):
         self.setCurrentIndex(self._make_index(self._get_valid_row(settings)))
 
     def _get_valid_row(self, settings):
-        stored_row = settings.value('power_hour_list_view/row', 0)
+        stored_row = int(settings.value('power_hour_list_view/row', 0))
         return stored_row if stored_row < self.model().rowCount() else 0
 
     def _make_index(self, row):

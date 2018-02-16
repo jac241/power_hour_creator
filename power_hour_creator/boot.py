@@ -25,7 +25,7 @@ def setup_logging():
                             '{}.log'.format(config.phc_env)),
                         filemode='a')
     # define a Handler which writes INFO messages or higher to the sys.stderr
-    console = logging.StreamHandler(stream=sys.stdout)
+    console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     # set a format which is simpler for console use
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
@@ -35,7 +35,7 @@ def setup_logging():
     # add the handler to the root _logger
     root_logger = logging.getLogger('')
 
-    if len(root_logger.handlers) < 1: # this gets called
+    if len(root_logger.handlers) <= 1: # this gets called
         root_logger.addHandler(console)
 
 

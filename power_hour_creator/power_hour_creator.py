@@ -7,6 +7,7 @@ from PyQt5.QtCore import QCoreApplication
 from power_hour_creator import config
 from power_hour_creator.ui.main_window import build_main_window
 from .boot import bootstrap_app_environment
+import traceback
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -16,6 +17,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     logger = logging.getLogger()
     logger.critical("Uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
+
     sys.exit(1)
 
 sys.excepthook = handle_exception
@@ -24,7 +26,6 @@ sys.excepthook = handle_exception
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-
     bootstrap_app_environment()
 
     logger = logging.getLogger(__name__)
