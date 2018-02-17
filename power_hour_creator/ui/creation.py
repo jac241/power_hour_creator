@@ -49,6 +49,10 @@ class PowerHourCreationThread(QThread):
             total_bytes = info['total_bytes']
         self.track_download_progress.emit(info['downloaded_bytes'], total_bytes)
 
+    def on_all_media_downloaded(self):
+        pass
+
+
     def on_service_error(self, message):
         self.error.emit(message)
 
@@ -144,7 +148,8 @@ def get_power_hour_export_path(parent, is_video):
 class PowerHourOutputLocator:
     default_vid_dir = {
         'darwin': '~/Movies',
-        'windows': '~/Videos'
+        'windows': '~/Videos',
+        'linux': '~/Videos'
     }
 
     def __init__(self, export_is_video, parent, settings=config.persistent_settings()):

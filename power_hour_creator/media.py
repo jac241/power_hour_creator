@@ -217,6 +217,10 @@ class MediaFile:
         return json.loads(output)
 
 
+class ServiceCancelled(Exception):
+    pass
+
+
 class CreatePowerHourService:
     def __init__(self, power_hour, progress_listener):
         self._power_hour = power_hour
@@ -239,26 +243,13 @@ class CreatePowerHourService:
 
         try:
             for media_file in media_files:
-                if self._creation_was_cancelled:
-                    break
-
                 self._download_media_file(media_file)
-
-                if self._creation_was_cancelled:
-                    break
-
                 self._process_media_file(media_file, processor)
 
+            self._progress_listener.on_all_media_downloaded()
 
-            if not self._creation_was_cancelled:
-                normalize_audio(media_files)
-
-            if not self._creation_was_cancelled:
-                output_paths = [f.output_path for f in media_files]
-                processor.merge_files_into_power_hour(output_paths, self._power_hour.path)
-
-            if self._creation_was_cancelled:  # can be cancelled at any time
-                self._handle_cancellation()
+            self._normalize_audio(media_files)
+            self._merge_files_into_power_hour(processor, media_files)
 
         except subprocess.CalledProcessError as e:
             self._handle_exception(
@@ -268,18 +259,8 @@ class CreatePowerHourService:
             self._handle_exception(str(e))
         except DownloadError as e:
             self._handle_exception(f'Error occurred while downloading media file: {e}')
-
-    def _process_media_file(self, media_file, processor):
-        processor.process_file(media_file)
-
-    def _media_files_in_power_hour(self, download_dir):
-        for index, track in enumerate(self._power_hour.tracks):
-            yield MediaFile(
-                track=track,
-                position=index,
-                directory=download_dir,
-                is_video=self._power_hour.is_video
-            )
+        except ServiceCancelled:
+            self._handle_cancellation()
 
     def _build_media_processor(self, download_dir):
         if self._power_hour.is_video:
@@ -293,11 +274,17 @@ class CreatePowerHourService:
                 progress_listener=self._progress_listener,
             )
 
-    def _handle_cancellation(self):
-        with suppress(FileNotFoundError):
-            os.remove(self._power_hour.path)
+    def _media_files_in_power_hour(self, download_dir):
+        for index, track in enumerate(self._power_hour.tracks):
+            yield MediaFile(
+                track=track,
+                position=index,
+                directory=download_dir,
+                is_video=self._power_hour.is_video
+            )
 
     def _download_media_file(self, media_file):
+        self._cancellation_checkpoint()
         self._progress_listener.on_new_track_downloading(
             download_number=media_file._position,
             track=media_file.track
@@ -308,6 +295,28 @@ class CreatePowerHourService:
             media_file=media_file,
             progress_listener=self._progress_listener
         )
+
+    def _process_media_file(self, media_file, processor):
+        self._cancellation_checkpoint()
+        processor.process_file(media_file)
+
+    def _normalize_audio(self, media_files):
+        self._cancellation_checkpoint()
+        normalize_audio(media_files)
+
+    def _merge_files_into_power_hour(self, processor, media_files):
+        self._cancellation_checkpoint()
+        output_paths = [f.output_path for f in media_files]
+        processor.merge_files_into_power_hour(output_paths, self._power_hour.path)
+
+    def _cancellation_checkpoint(self):
+        if self._creation_was_cancelled:
+            raise ServiceCancelled
+
+    def _handle_cancellation(self):
+        self._logger.info(f'Cancelled exporting power hour "{self._power_hour.name}"')
+        with suppress(FileNotFoundError):
+            os.remove(self._power_hour.path)
 
     def _handle_exception(self, message):
         self._logger.exception('Exception occurred during power hour creation')

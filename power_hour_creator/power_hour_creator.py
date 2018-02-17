@@ -8,13 +8,10 @@ from power_hour_creator import config
 from power_hour_creator.ui.main_window import build_main_window
 from .boot import bootstrap_app_environment
 import traceback
+import signal
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
-    if issubclass(exc_type, KeyboardInterrupt):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        return
-
     logger = logging.getLogger()
     logger.critical("Uncaught exception:", exc_info=(exc_type, exc_value, exc_traceback))
 
@@ -24,6 +21,7 @@ sys.excepthook = handle_exception
 
 
 def main():
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     bootstrap_app_environment()
