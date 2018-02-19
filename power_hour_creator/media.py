@@ -242,14 +242,9 @@ class CreatePowerHourService:
         media_files = list(self._media_files_in_power_hour(download_dir))
 
         try:
-            for media_file in media_files:
-                self._download_media_file(media_file)
-                self._process_media_file(media_file, processor)
-
-            self._progress_listener.on_all_media_downloaded()
-
+            self._download_and_prepare_each_file(media_files, processor)
             self._normalize_audio(media_files)
-            self._merge_files_into_power_hour(processor, media_files)
+            self._merge_files_into_power_hour(media_files, processor)
 
         except subprocess.CalledProcessError as e:
             self._handle_exception(
@@ -283,6 +278,12 @@ class CreatePowerHourService:
                 is_video=self._power_hour.is_video
             )
 
+    def _download_and_prepare_each_file(self, media_files, processor):
+        for media_file in media_files:
+            self._download_media_file(media_file)
+            self._process_media_file(media_file, processor)
+        self._progress_listener.on_all_media_downloaded()
+
     def _download_media_file(self, media_file):
         self._cancellation_checkpoint()
         self._progress_listener.on_new_track_downloading(
@@ -304,7 +305,7 @@ class CreatePowerHourService:
         self._cancellation_checkpoint()
         normalize_audio(media_files)
 
-    def _merge_files_into_power_hour(self, processor, media_files):
+    def _merge_files_into_power_hour(self, media_files, processor):
         self._cancellation_checkpoint()
         output_paths = [f.output_path for f in media_files]
         processor.merge_files_into_power_hour(output_paths, self._power_hour.path)

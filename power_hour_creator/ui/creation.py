@@ -16,6 +16,7 @@ class PowerHourCreationThread(QThread):
     power_hour_created = pyqtSignal()
     finished = pyqtSignal()
     track_download_progress = pyqtSignal(object, object)
+    all_media_downloaded = pyqtSignal()
     error = pyqtSignal(object)
 
     def __init__(self, parent, power_hour):
@@ -50,8 +51,7 @@ class PowerHourCreationThread(QThread):
         self.track_download_progress.emit(info['downloaded_bytes'], total_bytes)
 
     def on_all_media_downloaded(self):
-        pass
-
+        self.all_media_downloaded.emit()
 
     def on_service_error(self, message):
         self.error.emit(message)
@@ -78,9 +78,6 @@ class CreatePowerHourDialog(QDialog, Ui_PowerHourExportDialog):
         super().setupUi(ui)
         self.cancellingLabel.hide()
         self.setWindowTitle('Exporting: {}'.format(self._power_hour.name))
-
-    def _setup_progress_bar(self):
-        self.overallProgressBar.setMaximum(len(self._power_hour.tracks))
 
     def _setup_signals(self):
         self.cancelButton.clicked.connect(self._cancelling_export)
@@ -111,6 +108,9 @@ class CreatePowerHourDialog(QDialog, Ui_PowerHourExportDialog):
         dots = ('.' * ((num_dots + 1) % 4))
         self.cancellingLabel.setText(text.replace('.', '') + dots)
 
+    def _setup_progress_bar(self):
+        self.overallProgressBar.setMaximum(len(self._power_hour.tracks))
+
     def show_new_downloading_track(self, track):
         self.currentSongLabel.setText("Downloading: {}".format(track.title))
         self.currentSongProgressBar.reset()
@@ -120,6 +120,16 @@ class CreatePowerHourDialog(QDialog, Ui_PowerHourExportDialog):
             self.currentSongProgressBar.setMaximum(total_bytes)
 
         self.currentSongProgressBar.setValue(downloaded_bytes)
+
+    def show_final_processing_spinner(self):
+        self.currentSongLabel.hide()
+        self.currentSongProgressBar.hide()
+        self.overallProgressLabel.setText('Merging tracks into power hour. This may take awhile...')
+        self._turn_bar_into_spinner(self.overallProgressBar)
+
+    def _turn_bar_into_spinner(self, progress_bar):
+        progress_bar.setMinimum(0)
+        progress_bar.setMaximum(0)
 
 
 def create_power_hour_in_background(power_hour,
@@ -132,6 +142,7 @@ def create_power_hour_in_background(power_hour,
     thread.progress.connect(progress_dialog.overallProgressBar.setValue)
     thread.new_track_downloading.connect(progress_dialog.show_new_downloading_track)
     thread.track_download_progress.connect(progress_dialog.show_track_download_progress)
+    thread.all_media_downloaded.connect(progress_dialog.show_final_processing_spinner)
     thread.error.connect(export_progress_view._show_worker_error)
     thread.finished.connect(progress_dialog.close)
     thread.power_hour_created.connect(export_progress_view._show_power_hour_created)
