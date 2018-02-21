@@ -35,7 +35,7 @@ class TracklistTestModel:
         self._tracks = []
         self.tracklist = tracklist
 
-    def add_track(self, track, full_song=False, pos=None):
+    def add_track(self, track=get_local_video(), full_song=False, pos=None):
         self._tracks.append(track)
 
         viewport = self.tracklist.viewport()
@@ -107,14 +107,19 @@ class TracklistTestModel:
         return self.tracklist.model().tracks
 
     def add_track_below(self, row):
-        position = self._select_row(row)
-        menu = self._get_context_menu_from(position=position)
-        trigger_menu_action('Insert Track Below', menu)
+        trigger_menu_action(
+            'Insert Track &Below',
+            self._get_context_menu_for_row(row)
+        )
 
     def _select_row(self, row):
         position = self.cell_pos(row, TracklistModel.Columns.length)
         QTest.mouseClick(self.tracklist.viewport(), Qt.LeftButton, pos=position)
         return position
+
+    def _get_context_menu_for_row(self, row):
+        position = self._select_row(row)
+        return self._get_context_menu_from(position=position)
 
     def _get_context_menu_from(self, position):
         self.tracklist._build_custom_menu(position)
@@ -127,7 +132,14 @@ class TracklistTestModel:
     def delete_track(self, row):
         position = self._select_row(row)
         menu = self._get_context_menu_from(position)
-        trigger_menu_action('Delete Selected Tracks', menu)
+        trigger_menu_action('&Delete Selected Tracks', menu)
+
+    def add_local_song_through_context_menu(self, row=1):
+        trigger_menu_action(
+            'Browse for local &video file',
+            self._get_context_menu_for_row(row)
+        )
+
 
 
 def account_for_rounding(length):

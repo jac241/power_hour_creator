@@ -163,7 +163,7 @@ class PowerHourOutputLocator:
         'linux': '~/Videos'
     }
 
-    def __init__(self, export_is_video, parent, settings=config.persistent_settings()):
+    def __init__(self, export_is_video, parent, settings=config.get_persistent_settings()):
         self._export_is_video = export_is_video
         self._parent = parent
         self._settings = settings

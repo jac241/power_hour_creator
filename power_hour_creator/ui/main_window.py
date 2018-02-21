@@ -31,7 +31,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tracklist_model = tracklist_model
         self.tracklist_delegate = tracklist_delegate
         self.track_error_dispatcher = track_error_dispatcher
-        self._settings = config.persistent_settings()
+        self._settings = config.get_persistent_settings()
 
         self.setupUi(self)
         self._setup_power_hour_list_view()

@@ -20,10 +20,13 @@ track_length = 60
 
 OS = platform.system().lower()
 
+DEFAULT_IMPORT_DIR = os.path.expanduser('~/Documents')
+
 
 def db_path():
     return os.path.join(APP_DIRS.user_data_dir, '{}.db'.format(phc_env))
 
 
-def persistent_settings():
+def get_persistent_settings():
     return QSettings(APP_AUTHOR, APP_NAME)
+

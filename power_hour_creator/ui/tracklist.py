@@ -539,19 +539,22 @@ class Tracklist(QTableView):
         menu = QMenu(self)
 
         if self.model().rowCount() > 0:
-            insert_above = QAction('Insert Track Above', self)
+            insert_above = QAction('Insert Track &Above', self)
             insert_above.triggered.connect(self._insert_row_above)
             menu.addAction(insert_above)
 
-            insert_below = QAction('Insert Track Below', self)
+            insert_below = QAction('Insert Track &Below', self)
             insert_below.triggered.connect(self._insert_row_below)
             menu.addAction(insert_below)
 
-            delete_selected = QAction('Delete Selected Tracks', self)
+            delete_selected = QAction('&Delete Selected Tracks', self)
             delete_selected.triggered.connect(self._delete_selected_tracks)
             menu.addAction(delete_selected)
 
-        add_track_to_end = QAction('Add Track To End', self)
+            browse_for_local_vid = QAction('Browse for local &video file', self)
+            menu.addAction(browse_for_local_vid)
+
+        add_track_to_end = QAction('Add Track To &End', self)
         # add_track_to_end.triggered.connect(self.model().add_track_to_end)
         add_track_to_end.triggered.connect(self._add_track_to_end)
         menu.addAction(add_track_to_end)
