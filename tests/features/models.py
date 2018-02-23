@@ -141,7 +141,6 @@ class TracklistTestModel:
         )
 
 
-
 def account_for_rounding(length):
     return length - 1
 

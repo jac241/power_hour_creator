@@ -2,7 +2,10 @@ import os
 
 from power_hour_creator import config
 
-identity = lambda x: x
+
+def identity(x):
+    return x
+
 
 def store_results_in_settings(
         key,
@@ -18,6 +21,14 @@ def store_results_in_settings(
 
 
 def store_dirname_in_settings(key, settings=config.get_persistent_settings()):
+    def dirname_if_path_or_old_value(path):
+        folder = os.path.dirname(path)
+
+        if folder:
+            return folder
+        else:
+            return settings.value(key)
+
     return store_results_in_settings(
-        key=key, settings=settings, transform=os.path.dirname)
+        key=key, settings=settings, transform=dirname_if_path_or_old_value)
 

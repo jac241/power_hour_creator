@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QFileDialog
 
-from power_hour_creator import config
-from power_hour_creator.config import get_persistent_settings
+from power_hour_creator.config import get_persistent_settings, \
+    DEFAULT_TRACKLIST_DIR
 from power_hour_creator.media import get_tracklist_from_file, PowerHour
 from power_hour_creator.ui.helpers import store_dirname_in_settings
 
@@ -25,7 +25,7 @@ def get_import_path(parent_widget):
     path, _ = QFileDialog.getOpenFileName(
         parent_widget,
         'Import Tracklist',
-        get_persistent_settings().value(IMPORT_DIR_KEY, config.DEFAULT_IMPORT_DIR),
+        get_persistent_settings().value(IMPORT_DIR_KEY, DEFAULT_TRACKLIST_DIR),
         'Power Hour Tracklists (*.json)',
     )
 

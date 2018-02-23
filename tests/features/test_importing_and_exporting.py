@@ -19,9 +19,9 @@ def test_exporting_power_hour_creates_json_file(
         monkeypatch):
 
     monkeypatch.setattr(
-        target=power_hour_creator.ui.tracklist_export,
-        name='get_tracklist_export_path',
-        value=lambda parent_widget: (export_path, '')
+        target=power_hour_creator.ui.tracklist_export.QFileDialog,
+        name='getSaveFileName',
+        value=lambda *args: (export_path, '')
     )
 
     tracklist_component.add_track(get_local_video(), full_song=True)

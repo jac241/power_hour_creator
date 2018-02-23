@@ -1,16 +1,7 @@
-from unittest import TestCase
-from unittest.mock import MagicMock, Mock
-
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex
-from PyQt5.QtSql import QSqlTableModel
-from PyQt5.QtWidgets import QApplication, QWidget, QLineEdit
-from PyQt5.QtWidgets import QTableWidgetItem
 from decimal import Decimal
+from unittest import TestCase
 
-from power_hour_creator.ui.main_window import TrackErrorDispatch
-from power_hour_creator.ui.tracklist import DisplayTime, Tracklist, \
-    TrackDelegate
-from tests.ui.support import QtTestCase
+from power_hour_creator.ui.tracklist import DisplayTime
 
 
 class TestDisplayTime(TestCase):
@@ -45,12 +36,4 @@ class TestDisplayTime(TestCase):
     def test_as_decimal_should_return_an_empty_string_if_the_time_is_empty(self):
         time = DisplayTime('')
         self.assertEqual(time.as_decimal(), '')
-
-# class TestTrackDelegate(QtTestCase):
-#     def setUp(self):
-#         super().setUp()
-#
-#         self.uut = TrackDelegate(
-#             track_error_dispatcher=TrackErrorDispatch()
-#         )
 

@@ -35,3 +35,14 @@ def test_store_dirname_in_settings_stores_the_resulting_dir_in_settings():
 
     f()
     assert settings.value('d') == '/test'
+
+
+def test_store_dirname_returns_the_old_value_if_no_new_value():
+    settings = MockSettings({'k': '/old/dir'})
+
+    @store_dirname_in_settings(key='k', settings=settings)
+    def f():
+        return ''
+
+    f()
+    assert settings.value('k') == '/old/dir'

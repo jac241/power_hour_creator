@@ -20,7 +20,7 @@ track_length = 60
 
 OS = platform.system().lower()
 
-DEFAULT_IMPORT_DIR = os.path.expanduser('~/Documents')
+DEFAULT_TRACKLIST_DIR = os.path.expanduser('~/Documents')
 
 
 def db_path():

@@ -4,7 +4,7 @@ from PyQt5.QtCore import QModelIndex, QRegExp, QSettings
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtSql import QSqlTableModel, QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import QMenu, QAction, \
-    QTableView
+    QTableView, QFileDialog
 from PyQt5.QtWidgets import QComboBox
 from PyQt5.QtWidgets import QItemDelegate
 from PyQt5.QtWidgets import QLineEdit
@@ -13,6 +13,7 @@ import re
 
 from decimal import Decimal, InvalidOperation
 
+from power_hour_creator.config import get_persistent_settings
 from power_hour_creator.media import Track, find_track
 from youtube_dl import DownloadError
 
@@ -511,6 +512,9 @@ class TracklistModel(QSqlTableModel):
 
         return query.exec_()
 
+    def set_row_url(self, row, url):
+        self.setData(self.index(row, self.Columns.url), url)
+
 
 class Tracklist(QTableView):
 
@@ -552,10 +556,10 @@ class Tracklist(QTableView):
             menu.addAction(delete_selected)
 
             browse_for_local_vid = QAction('Browse for local &video file', self)
+            browse_for_local_vid.triggered.connect(self._browse_for_local_video_file)
             menu.addAction(browse_for_local_vid)
 
         add_track_to_end = QAction('Add Track To &End', self)
-        # add_track_to_end.triggered.connect(self.model().add_track_to_end)
         add_track_to_end.triggered.connect(self._add_track_to_end)
         menu.addAction(add_track_to_end)
 
@@ -573,6 +577,12 @@ class Tracklist(QTableView):
         for index in reversed(sorted(self.selectionModel().selectedRows())):
             self.model().remove_track_accounting_for_existing_tracks(index.row())
 
+    def _browse_for_local_video_file(self):
+        path = browse_for_video_file(parent=self)
+        selected_row = self.selectedIndexes()[-1].row()
+        if len(path) > 0:
+            self.model().set_row_url(row=selected_row, url=path)
+
     def _add_track_to_end(self):
         self.model().add_track_to_end()
         self.scrollToBottom()
@@ -583,3 +593,17 @@ class Tracklist(QTableView):
     def apply_settings(self, settings):
         if settings.contains('tracklist/header'):
             self.horizontalHeader().restoreState(settings.value('tracklist/header'))
+
+
+LOCAL_VID_DIR_KEY = 'tracklist/local_vid_dir'
+
+
+def browse_for_video_file(parent=None):
+    path, _ = QFileDialog.getOpenFileName(
+        parent=parent,
+        caption='Find Local Video',
+        directory=get_persistent_settings().value(LOCAL_VID_DIR_KEY, '~/Videos'),
+        filter='Videos (*.mp4)',
+    )
+
+    return path

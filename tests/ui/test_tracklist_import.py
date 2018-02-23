@@ -8,7 +8,7 @@ from tests.support.mocks import patch_getOpenFileName
 
 
 def test_get_import_path_should_store_path_in_settings(monkeypatch):
-    expected_path = os.path.join(config.DEFAULT_IMPORT_DIR, 'fake')
+    expected_path = os.path.join(config.DEFAULT_TRACKLIST_DIR, 'fake')
     import_path = os.path.join(expected_path, 'path.json')
     patch_getOpenFileName(monkeypatch, import_path)
 
