@@ -1,9 +1,8 @@
-from PyQt5.QtWidgets import QFileDialog
-
 from power_hour_creator.config import get_persistent_settings, \
     DEFAULT_TRACKLIST_DIR
 from power_hour_creator.media import export_power_hour_to_json
-from power_hour_creator.ui.helpers import store_dirname_in_settings
+from power_hour_creator.ui.helpers import store_dirname_in_settings, \
+    get_save_file_name
 
 EXPORT_DIR_KEY = 'tracklist_export/dir'
 
@@ -20,11 +19,12 @@ def export_tracklist_to_file(parent_widget, power_hour):
 
 @store_dirname_in_settings(key=EXPORT_DIR_KEY)
 def get_tracklist_export_path(parent_widget):
-    path, _ = QFileDialog.getSaveFileName(
-        parent_widget,
-        'Export Tracklist',
-        get_persistent_settings().value(EXPORT_DIR_KEY, DEFAULT_TRACKLIST_DIR),
-        'Power Hour Tracklists (*.json)',
+    path = get_save_file_name(
+        parent=parent_widget,
+        caption='Export Tracklist',
+        directory=get_persistent_settings().value(EXPORT_DIR_KEY, DEFAULT_TRACKLIST_DIR),
+        filter='Power Hour Tracklists (*.json)',
+        ext='.json'
     )
 
     return path

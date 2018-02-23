@@ -1,12 +1,13 @@
 import os
 
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
-from PyQt5.QtWidgets import QDialog, QFileDialog
+from PyQt5.QtWidgets import QDialog
 
 from power_hour_creator import config
 from power_hour_creator.media import CreatePowerHourService
 from power_hour_creator.ui.forms.power_hour_export_dialog import \
     Ui_PowerHourExportDialog
+from power_hour_creator.ui.helpers import get_save_file_name
 
 
 class PowerHourCreationThread(QThread):
@@ -169,11 +170,12 @@ class PowerHourOutputLocator:
         self._settings = settings
 
     def get_save_file_name(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self._parent,
-            'Export Power Hour',
-            os.path.expanduser(self._directory),
-            self._file_description,
+        path = get_save_file_name(
+            parent=self._parent,
+            caption='Export Power Hour',
+            directory=os.path.expanduser(self._directory),
+            filter=self._file_description,
+            ext=f'.{self._format}'
         )
 
         self._store_directory_if_present(path)
@@ -183,6 +185,13 @@ class PowerHourOutputLocator:
     @property
     def _directory(self):
         return self._settings.value(self._last_dir_settings_key, self._default_dir)
+
+    @property
+    def _format(self):
+        if self._export_is_video:
+            return config.VIDEO_FORMAT
+        else:
+            return config.AUDIO_FORMAT
 
     @property
     def _last_dir_settings_key(self):
@@ -212,3 +221,4 @@ class PowerHourOutputLocator:
                 self._last_dir_settings_key,
                 os.path.dirname(path)
             )
+

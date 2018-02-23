@@ -11,9 +11,9 @@ def test_get_tracklist_export_path_should_store_path_in_settings(monkeypatch):
     expected_path = os.path.join(config.DEFAULT_TRACKLIST_DIR, 'fake')
     export_path = os.path.join(expected_path, 'path.json')
     monkeypatch.setattr(
-        target=tracklist_export.QFileDialog,
-        name='getSaveFileName',
-        value=lambda *args: (export_path, '*.json')
+        target=tracklist_export,
+        name='get_save_file_name',
+        value=lambda *args, **kwargs: export_path
     )
     get_tracklist_export_path(parent_widget=None)
 

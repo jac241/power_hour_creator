@@ -1,5 +1,7 @@
 import os
 
+from PyQt5.QtWidgets import QFileDialog
+
 from power_hour_creator import config
 
 
@@ -32,3 +34,11 @@ def store_dirname_in_settings(key, settings=config.get_persistent_settings()):
     return store_results_in_settings(
         key=key, settings=settings, transform=dirname_if_path_or_old_value)
 
+
+def get_save_file_name(parent, caption, directory, filter, ext):
+    path, _ = QFileDialog.getSaveFileName(parent, caption, directory, filter)
+
+    if path and not path.endswith(ext):
+        return path + ext
+    else:
+        return path
