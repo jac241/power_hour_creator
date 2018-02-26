@@ -220,7 +220,7 @@ def step_impl(context):
     # Right click doesn't work for some reason...
     # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
 
-    context.tracklist._build_custom_menu(url_cell_pos)
+    context.tracklist.show_context_menu(url_cell_pos)
 
 
 @step("I add a track to the power hour at row {pos}")
@@ -279,7 +279,7 @@ def open_context_menu_at(context, row, column):
     # Right click doesn't work for some reason...
     # QTest.mouseClick(viewport, Qt.RightButton, pos=url_cell_pos)
 
-    context.tracklist._build_custom_menu(url_cell_pos)
+    context.tracklist.show_context_menu(url_cell_pos)
 
     return QApplication.activePopupWidget()
 
@@ -380,7 +380,7 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    context.tracklist._build_custom_menu(QPoint(0, 0))
+    context.tracklist.show_context_menu(QPoint(0, 0))
     menu = QApplication.activePopupWidget()
     QTest.keyClick(menu, Qt.Key_Down)
     QTest.keyClick(menu, Qt.Key_Enter)

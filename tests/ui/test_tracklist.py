@@ -1,7 +1,7 @@
 from decimal import Decimal
 from unittest import TestCase
 
-from power_hour_creator.ui.tracklist import DisplayTime
+from power_hour_creator.ui.tracklist import DisplayTime, Tracklist
 
 
 class TestDisplayTime(TestCase):
@@ -37,3 +37,8 @@ class TestDisplayTime(TestCase):
         time = DisplayTime('')
         self.assertEqual(time.as_decimal(), '')
 
+
+def test_Tracklist_build_context_menu_does_not_show_track_dependent_items_without_selected_track(qapp):
+    tracklist = Tracklist(parent=None)
+    menu = tracklist.build_context_menu()
+    assert len(menu.actions()) == 1

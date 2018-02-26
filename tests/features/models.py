@@ -122,7 +122,7 @@ class TracklistTestModel:
         return self._get_context_menu_from(position=position)
 
     def _get_context_menu_from(self, position):
-        self.tracklist._build_custom_menu(position)
+        self.tracklist.show_context_menu(position)
         return QApplication.activePopupWidget()
 
     @property

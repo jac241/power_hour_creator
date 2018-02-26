@@ -537,12 +537,16 @@ class Tracklist(QTableView):
         return self.rowCount() - 1
 
     def _setup_context_menu(self):
-        self.customContextMenuRequested.connect(self._build_custom_menu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
 
-    def _build_custom_menu(self, position):
+    def show_context_menu(self, position):
+        menu = self.build_context_menu()
+
+        menu.popup(self.viewport().mapToGlobal(position))
+
+    def build_context_menu(self):
         menu = QMenu(self)
-
-        if self.model().rowCount() > 0:
+        if len(self.selectedIndexes()) > 0:
             insert_above = QAction('Insert Track &Above', self)
             insert_above.triggered.connect(self._insert_row_above)
             menu.addAction(insert_above)
@@ -556,14 +560,13 @@ class Tracklist(QTableView):
             menu.addAction(delete_selected)
 
             browse_for_local_vid = QAction('Browse for local &video file', self)
-            browse_for_local_vid.triggered.connect(self._browse_for_local_video_file)
+            browse_for_local_vid.triggered.connect(
+                self._browse_for_local_video_file)
             menu.addAction(browse_for_local_vid)
-
         add_track_to_end = QAction('Add Track To &End', self)
         add_track_to_end.triggered.connect(self._add_track_to_end)
         menu.addAction(add_track_to_end)
-
-        menu.popup(self.viewport().mapToGlobal(position))
+        return menu
 
     def _insert_row_above(self):
         selected_row = self.selectedIndexes()[0].row()
