@@ -158,7 +158,6 @@ class PowerHour:
         )
 
 
-
 class MediaFile:
     def __init__(self, track, position, directory, is_video):
         self.track = track

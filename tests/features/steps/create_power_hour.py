@@ -29,7 +29,7 @@ track_url = 'https://soundcloud.com/fsoe-excelsior/sodality-floe-running'
 new_ph_name = "My Power Hour"
 
 
-@step("I create a power hour")
+@step("I create an audio power hour")
 def step_impl(context):
     """
     :type context: behave.runner.Context
@@ -43,6 +43,8 @@ def step_impl(context):
 
     main_window.get_power_hour_export_path = Mock()
     main_window.get_power_hour_export_path.return_value = context.export_path
+
+    context.main_window.videoCheckBox.setCheckState(Qt.Unchecked)
 
     QTest.mouseClick(context.main_window.createPowerHourButton, Qt.LeftButton)
 

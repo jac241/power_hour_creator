@@ -62,7 +62,8 @@ class PowerHourListComponent(object):
 
     @property
     def power_hour_is_selected(self):
-        return len(self._ph_list_view.selectedIndexes())
+        index = self._ph_list_view.selectedIndexes()[0]
+        return index and index.row() < self.num_power_hours
 
     def row_pos(self, row):
         return self._helper.row_pos(row)

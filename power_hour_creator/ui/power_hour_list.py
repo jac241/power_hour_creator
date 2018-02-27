@@ -71,8 +71,16 @@ class PowerHourListView(QListView):
             self.model().delete_power_hour(model_index.row())
 
     def _select_remaining_power_hour(self, selected_indexes):
-        self.setCurrentIndex(selected_indexes[0])
+        self.set_current_index_to_nearest_index(selected_indexes)
         self._clear_selection_if_no_power_hours()
+
+    def set_current_index_to_nearest_index(self, selected_indexes):
+        index = selected_indexes[0]
+        if index.row() < self.model().rowCount() or self.model().rowCount() == 0:
+            self.setCurrentIndex(index)
+        else:
+            new_index = self.model().rowCount() - 1
+            self.setCurrentIndex(self._make_index(new_index))
 
     def _clear_selection_if_no_power_hours(self):
         if self.model().rowCount() == 0:

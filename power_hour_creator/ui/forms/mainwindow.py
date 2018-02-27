@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'designer/mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.9
+# Created by: PyQt5 UI code generator 5.10
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -29,9 +29,8 @@ class Ui_mainWindow(object):
         self.powerHoursLayout.setObjectName("powerHoursLayout")
         self.powerHoursLabel = QtWidgets.QLabel(self.verticalLayoutWidget)
         font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setWeight(50)
+        font.setBold(True)
+        font.setWeight(75)
         font.setKerning(True)
         self.powerHoursLabel.setFont(font)
         self.powerHoursLabel.setObjectName("powerHoursLabel")
@@ -55,9 +54,8 @@ class Ui_mainWindow(object):
         self.tracksLayout.setObjectName("tracksLayout")
         self.powerHourNameLabel = QtWidgets.QLabel(self.verticalLayoutWidget_2)
         font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(False)
-        font.setWeight(50)
+        font.setBold(True)
+        font.setWeight(75)
         self.powerHourNameLabel.setFont(font)
         self.powerHourNameLabel.setObjectName("powerHourNameLabel")
         self.tracksLayout.addWidget(self.powerHourNameLabel)
@@ -78,6 +76,7 @@ class Ui_mainWindow(object):
         self.optionsSectionLabel.setObjectName("optionsSectionLabel")
         self.powerHourOptions.addWidget(self.optionsSectionLabel)
         self.videoCheckBox = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
+        self.videoCheckBox.setChecked(True)
         self.videoCheckBox.setObjectName("videoCheckBox")
         self.powerHourOptions.addWidget(self.videoCheckBox)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)

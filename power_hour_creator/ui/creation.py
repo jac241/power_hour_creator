@@ -34,6 +34,7 @@ class PowerHourCreationThread(QThread):
 
         self.service.execute()
 
+        import pdb; pdb.set_trace()
         if not (self._is_cancelled or self.service.did_error):
             self.power_hour_created.emit()
 
@@ -145,12 +146,11 @@ def create_power_hour_in_background(power_hour,
     thread.track_download_progress.connect(progress_dialog.show_track_download_progress)
     thread.all_media_downloaded.connect(progress_dialog.show_final_processing_spinner)
     thread.error.connect(export_progress_view._show_worker_error)
-    thread.finished.connect(progress_dialog.close)
     thread.power_hour_created.connect(export_progress_view._show_power_hour_created)
-    thread.finished.connect(thread.deleteLater)
+    thread.finished.connect(progress_dialog.close)
 
-    progress_dialog.show()
     thread.start()
+    progress_dialog.exec_()
 
 
 def get_power_hour_export_path(parent, is_video):

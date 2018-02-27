@@ -6,14 +6,14 @@ Feature: Create power hour
     And I add a full song to the power hour
     And I set track 1's start time to 0:00
     And I set track 2's start time to 0:00.45
-    And I create a power hour
+    And I create an audio power hour
     Then that power hour should have been created
     And I should see the power hour created message
 
   Scenario: I should be able to move around the tracklist and create a power hour without errors
     When I add 1 tracks to a power hour
     And I click around the tracklist start times
-    And I create a power hour
+    And I create an audio power hour
     Then that power hour should have been created
 
   Scenario: I should not be able to create a power hour if I haven't entered a url
@@ -70,7 +70,7 @@ Feature: Create power hour
   Scenario: I should be able to cancel creating a power hour
     When I add 2 tracks to a power hour
     And I add a full song to the power hour
-    And I create a power hour
+    And I create an audio power hour
     And I click cancel
     Then I should see that the export is cancelling
     And that power hour should have been cancelled

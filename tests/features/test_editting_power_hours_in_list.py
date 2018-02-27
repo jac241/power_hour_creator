@@ -15,7 +15,7 @@ def test_users_should_see_no_track_after_deleting_only_power_hour(
         phs_list_component,
         tracklist_component):
     phs_list_component.delete_power_hour(index=0)
-    assert tracklist_component.row_count == 0
+    assert 0 == tracklist_component.row_count
 
 
 def test_users_should_see_no_context_menu_if_no_power_hours_in_list(
@@ -23,4 +23,4 @@ def test_users_should_see_no_context_menu_if_no_power_hours_in_list(
     pos = phs_list_component.row_pos(0)
     phs_list_component.delete_power_hour(index=0)
     menu = phs_list_component.open_context_menu_at(pos)
-    assert len(menu.actions()) == 0
+    assert 0 == len(menu.actions())
