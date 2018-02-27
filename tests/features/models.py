@@ -78,6 +78,9 @@ class TracklistTestModel:
         row = int(track_num)
         return self._table.cell_pos(row, column)
 
+    def row_pos(self, row):
+        return self._table.row_pos(row)
+
     def track_start_time(self, track_index):
         return self._cell_text(row=track_index,
                                column=TracklistModel.Columns.start_time)
@@ -128,6 +131,9 @@ class TracklistTestModel:
             'Browse for local &video file',
             self._table.open_context_menu_on_row(row)
         )
+
+    def open_context_menu_at(self, position):
+        return self._table.open_context_menu_at(position)
 
 
 class ItemViewHelper:

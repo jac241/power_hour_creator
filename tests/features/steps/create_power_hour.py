@@ -422,7 +422,7 @@ def step_impl(context):
     :type context: behave.runner.Context
     """
     wait_for(export_dialog_visible, context)
-    wait_for(lambda: len(psutil.Process().children()) > 0)
+    wait_for(lambda: len(psutil.Process().children()) > 0, wait_time=60)
 
     dialog = get_export_dialog(context)
     dialog.cancelButton.click()
@@ -451,9 +451,17 @@ def step_impl(context):
     assert_that(os.path.exists(context.export_path), is_(False))
 
 
-def wait_for(f, *fargs, **fkwargs):
-    while not f(*fargs, **fkwargs):
-        QTest.qWait(100)
+def wait_for(f, *fargs, wait_time=3, **fkwargs):
+    timeout = time.time() + wait_time
+    result = None
+
+    while True:
+        result = f(*fargs, **fkwargs)
+        if result or time.time() > timeout:
+            break
+        QTest.qWait(10)
+
+    return result
 
 
 @step("I should not see the power hour created message")

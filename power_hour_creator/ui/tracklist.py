@@ -563,9 +563,12 @@ class Tracklist(QTableView):
             browse_for_local_vid.triggered.connect(
                 self._browse_for_local_video_file)
             menu.addAction(browse_for_local_vid)
-        add_track_to_end = QAction('Add Track To &End', self)
-        add_track_to_end.triggered.connect(self._add_track_to_end)
-        menu.addAction(add_track_to_end)
+
+        if self.model().current_power_hour_id:
+            add_track_to_end = QAction('Add Track To &End', self)
+            add_track_to_end.triggered.connect(self._add_track_to_end)
+            menu.addAction(add_track_to_end)
+
         return menu
 
     def _insert_row_above(self):

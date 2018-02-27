@@ -72,3 +72,8 @@ class PowerHourListView(QListView):
 
     def _select_remaining_power_hour(self, selected_indexes):
         self.setCurrentIndex(selected_indexes[0])
+        self._clear_selection_if_no_power_hours()
+
+    def _clear_selection_if_no_power_hours(self):
+        if self.model().rowCount() == 0:
+            self.clearSelection()
