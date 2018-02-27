@@ -60,6 +60,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
           <property name="frameShadow">
            <enum>QFrame::Sunken</enum>
           </property>
@@ -170,7 +173,7 @@
      <x>0</x>
      <y>0</y>
      <width>825</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

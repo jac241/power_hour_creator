@@ -2,7 +2,7 @@ appdirs==1.4.3
 attrs==16.3.0
 youtube_dl>=2018.2.11
 pydub==0.18.0
-PyQt5==5.9
+PyQt5==5.10
 PyInstaller==3.3
 furl==1.0.0
 pyhamcrest==1.9.0
@@ -13,4 +13,4 @@ pypiwin32; sys_platform == 'win32'
 simplejson==3.11.1
 git+git://github.com/behave/behave@master#egg=behave
 pytest==3.2.3
-pytest-qt==2.2.1
+pytest-qt==2.3.1

@@ -1,3 +1,5 @@
+from PyQt5.QtTest import QTest
+
 from power_hour_creator.ui import tracklist
 from tests.features.models import local_videos
 

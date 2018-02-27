@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\designer\mainwindow.ui'
+# Form implementation generated from reading ui file 'designer/mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.7
+# Created by: PyQt5 UI code generator 5.9
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -43,6 +43,7 @@ class Ui_mainWindow(object):
         sizePolicy.setHeightForWidth(self.powerHoursListView.sizePolicy().hasHeightForWidth())
         self.powerHoursListView.setSizePolicy(sizePolicy)
         self.powerHoursListView.setMinimumSize(QtCore.QSize(0, 0))
+        self.powerHoursListView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.powerHoursListView.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.powerHoursListView.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContentsOnFirstShow)
         self.powerHoursListView.setObjectName("powerHoursListView")
@@ -89,7 +90,7 @@ class Ui_mainWindow(object):
         self.horizontalLayout_2.addWidget(self.splitter)
         mainWindow.setCentralWidget(self.centralWidget)
         self.menubar = QtWidgets.QMenuBar(mainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 825, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 825, 22))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")

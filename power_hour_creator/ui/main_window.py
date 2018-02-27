@@ -1,5 +1,4 @@
 import os
-import os
 import subprocess
 
 from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint

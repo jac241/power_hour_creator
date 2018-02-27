@@ -44,3 +44,4 @@ def tracklist_component(main_window):
 def phs_list_component(main_window):
     return PowerHourListComponent(main_window.powerHoursListView)
 
+

@@ -194,11 +194,17 @@ def migrate_database():
             log_successful_migration(migration)
 
 
+def turn_on_foreign_keys():
+    q = QSqlQuery('PRAGMA foreign_keys=ON')
+    assert q.exec_()
+
+
 def setup_database():
     ensure_db_folder_exists()
     connect_to_db()
     ensure_migrations_table_exists()
     migrate_database()
+    turn_on_foreign_keys()
 
 
 def ensure_db_folder_exists():
