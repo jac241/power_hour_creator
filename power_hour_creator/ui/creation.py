@@ -34,7 +34,6 @@ class PowerHourCreationThread(QThread):
 
         self.service.execute()
 
-        import pdb; pdb.set_trace()
         if not (self._is_cancelled or self.service.did_error):
             self.power_hour_created.emit()
 
