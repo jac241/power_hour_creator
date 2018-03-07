@@ -1,10 +1,11 @@
 import os
 import subprocess
 
-from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint
+from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy
 
+from alchemy_test import TrackRepository, TracklistModel, Track
 from power_hour_creator import config
 from power_hour_creator.media import PowerHour
 from power_hour_creator.resources import image_path
@@ -12,7 +13,7 @@ from power_hour_creator.ui.creation import create_power_hour_in_background, \
     get_power_hour_export_path
 from power_hour_creator.ui.tracklist_export import export_tracklist_to_file
 from power_hour_creator.ui.power_hour_list import PowerHourModel
-from power_hour_creator.ui.tracklist import TrackDelegate, TracklistModel
+from power_hour_creator.ui.tracklist import TrackDelegate
 from power_hour_creator.ui.tracklist_import import import_tracklist_from_file
 from power_hour_creator.ui.about_dialog import AboutDialog
 from .forms.mainwindow import Ui_mainWindow
@@ -61,6 +62,13 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tracklist.hideColumn(1)  # position
         self.tracklist.hideColumn(7)  # power_hour_id
 
+        column_indices = Track.column_indices
+        # self.tracklist.setHeaderData(column_indices['url'], Qt.Horizontal, "URL")
+        # self.tracklist.setHeaderData(column_indices['title'], Qt.Horizontal, "Title")
+        # self.tracklist.setHeaderData(column_indices['length'], Qt.Horizontal, "Duration")
+        # self.tracklist.setHeaderData(column_indices['start_time'], Qt.Horizontal, "Start Time")
+        # self.tracklist.setHeaderData(column_indices['full_song'], Qt.Horizontal, "Full Song?")
+
     def _setup_tracklist_delegate(self):
         self.tracklist.setItemDelegate(self.tracklist_delegate)
 
@@ -95,17 +103,17 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             )
 
     def _enable_create_power_hour_button_when_tracks_present(self):
-        self.tracklist_model\
-            .new_power_hour_selected\
-            .connect(self._try_to_enable_create_button_on_tracklist_change)
+        # self.tracklist_model\
+        #     .new_power_hour_selected\
+        #     .connect(self._try_to_enable_create_button)
 
         self.tracklist_model\
             .dataChanged\
-            .connect(self._try_to_enable_create_button_on_tracklist_change)
+            .connect(self._try_to_enable_create_button)
 
-        self._try_to_enable_create_button_on_tracklist_change()
+        self._try_to_enable_create_button()
 
-    def _try_to_enable_create_button_on_tracklist_change(self):
+    def _try_to_enable_create_button(self):
         self.createPowerHourButton.setEnabled(self.tracklist_model.is_valid_for_export())
 
     def _show_worker_error(self, message):
@@ -191,6 +199,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.powerHoursListView.selectionModel().currentRowChanged.connect(show_power_hour_name)
         self.powerHoursListView.selectionModel().currentRowChanged.connect(show_this_power_hours_tracks)
         self.powerHoursListView.selectionModel().currentRowChanged.connect(self.tracklist.scrollToTop)
+        self.powerHoursListView.selectionModel().currentRowChanged.connect(self._try_to_enable_create_button)
 
         self.powerHoursListView.model().dataChanged.connect(show_renamed_power_hour_name)
 
@@ -257,10 +266,11 @@ class TrackErrorDispatch(QObject):
 
 
 def build_main_window():
+    tracklist_model = TracklistModel()
     track_error_dispatcher = TrackErrorDispatch()
     return MainWindow(
         power_hour_model=PowerHourModel(),
-        tracklist_model=TracklistModel(),
+        tracklist_model=tracklist_model,
         tracklist_delegate=TrackDelegate(
             track_error_dispatcher=track_error_dispatcher
         ),

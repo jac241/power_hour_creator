@@ -1,21 +1,26 @@
 from contextlib import contextmanager
 
-from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex
+from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSignal
 from PyQt5.QtWidgets import QApplication
-from sqlalchemy import create_engine, Integer, Column, Text, Numeric, Boolean, ForeignKey, MetaData
+from inflection import titleize
+from sqlalchemy import create_engine, Integer, Column, Text, Numeric, Boolean, \
+    ForeignKey, desc, asc, func
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import sessionmaker, joinedload, relationship
+from sqlalchemy.orm import sessionmaker, relationship
 
 from power_hour_creator import config
 from power_hour_creator.media import find_track
-from power_hour_creator.power_hour_creator import main
-from power_hour_creator.ui.tracklist import Tracklist
+from power_hour_creator.ui.tracklist import Tracklist, DEFAULT_NUM_TRACKS
 
 
-def naive_singularize(base, local_cls, referred_cls, constraint):
-    return referred_cls.__name__.lower()[0:-1]
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 engine = create_engine(f'sqlite:///{config.db_path()}', echo=True)
@@ -31,13 +36,24 @@ class QtModelMixin:
         else:
             return False
 
-
     def data(self, column_index):
         return getattr(self, self._column_name(column_index))
 
     def _column_name(self, column_index):
         attribute_name = self.__table__._columns.keys()[column_index]
         return attribute_name
+
+    @classmethod
+    def column_names(cls):
+        return cls.__table__._columns.keys()
+
+    @classmethod
+    def column_indices(cls):
+        result = {}
+        for index, name in enumerate(cls.column_names()):
+            result[name] = index
+        return result
+
 
 
 class PowerHour(Base):
@@ -56,7 +72,7 @@ class Track(QtModelMixin, Base):
     _url = Column('url', Text, nullable=False)
     title = Column(Text, nullable=False)
     length = Column(Integer, nullable=False)
-    start_time = Column(Numeric, nullable=False)
+    _start_time = Column('start_time', Numeric, nullable=False)
     full_song = Column(Boolean, nullable=False, default=False)
     power_hour_id = Column(Integer, ForeignKey('power_hours.id'))
     power_hour = relationship('PowerHour', back_populates='tracks')
@@ -79,18 +95,22 @@ class Track(QtModelMixin, Base):
             self.start_time = 0
             self.length = 0
 
+    @hybrid_property
+    def start_time(self):
+        try:
+            return round(float(self._start_time), 3)
+        except TypeError:
+            return self._start_time
+
+    @start_time.setter
+    def start_time(self, start_time):
+        self._start_time = start_time
+
 
 Base.prepare(engine, reflect=True)
 
-# Session = sessionmaker(bind=engine, expire_on_commit=False)
 Session = sessionmaker(bind=engine)
 session = Session()
-r = session.query(Track).count()
-print(r)
-
-power_hour = session.query(PowerHour).order_by('-id').first()
-for track in power_hour.tracks:
-    print(track.url)
 
 
 class TrackRepository:
@@ -98,16 +118,34 @@ class TrackRepository:
         self._session = session
 
     def find_by_power_hour_id(self, power_hour_id):
-        return self._session.query(Track).filter_by(power_hour_id=power_hour_id).all()
+        return self._tracks_for_power_hour(power_hour_id).all()
 
-    def commit(self):
-        self._session.commit()
+    def create_tracks_for_new_power_hour(self, power_hour_id):
+        for position in range(0, DEFAULT_NUM_TRACKS):
+            self._session.add(
+                Track(
+                    position=position,
+                    url='',
+                    title='',
+                    length=0,
+                    start_time=0,
+                    power_hour_id=power_hour_id
+                )
+            )
 
-    def update(self, id, **kwargs):
-        t = self._session.query(Track).filter_by(id=id).one()
-        for key in kwargs.keys():
-            setattr(t, key, kwargs[key])
-        self._session.flush()
+    def find_tracks_ready_for_export(self, power_hour_id):
+        return self._tracks_for_power_hour(power_hour_id) \
+            .filter(Track.url != None, func.trim(Track.url) != '') \
+            .all()
+
+    def _tracks_for_power_hour(self, power_hour_id):
+        return self._query \
+            .filter_by(power_hour_id=power_hour_id) \
+            .order_by(asc(Track.position))
+
+    @property
+    def _query(self):
+        return self._session.query(Track)
 
 
 @contextmanager
@@ -124,11 +162,12 @@ def session_scope():
 
 
 class TracklistModel(QAbstractTableModel):
-    def __init__(self, parent, track_repo):
+    error_downloading = pyqtSignal(str, str)
+
+    def __init__(self, parent=None):
         super().__init__(parent)
         self._current_power_hour_id = None
         self._cache = []
-        self.repo = track_repo
 
     @property
     def current_power_hour_id(self):
@@ -141,10 +180,13 @@ class TracklistModel(QAbstractTableModel):
         self._warm_cache()
         self.endResetModel()
 
+    def show_tracks_for_power_hour(self, power_hour_id):
+        self.current_power_hour_id = power_hour_id
+
     def _warm_cache(self):
         with session_scope() as s:
             repo = TrackRepository(session=s)
-            self._cache = list(repo.find_by_power_hour_id(self._current_power_hour_id))
+            self._cache = list(repo.find_by_power_hour_id(self.current_power_hour_id))
             s.expunge_all()
 
     def setData(self, index, value, role=None):
@@ -157,8 +199,7 @@ class TracklistModel(QAbstractTableModel):
             data_changed = track.set_data(column_index=index.column(), value=value)
 
             if data_changed:
-                session.merge(track)
-                session.commit()
+                s.merge(track)
                 self.dataChanged.emit(self.index(index.row(), 0), self.index(index.row(), self.columnCount()))
 
         return True
@@ -188,20 +229,51 @@ class TracklistModel(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex(), **kwargs):
         return len(Track.__table__._columns.keys())
 
+    def is_valid_for_export(self):
+        return (
+            self.current_power_hour_id is not None and
+            bool(self._cache) and
+            all(not t.start_time == '' for t in self._cache)
+        )
 
-app = QApplication([])
-tracklist_model = TracklistModel(None, track_repo=TrackRepository(session))
-tracklist_model.current_power_hour_id = power_hour.id
+    def add_tracks_to_new_power_hour(self, power_hour_id):
+        self.beginInsertRows(QModelIndex(), 0, DEFAULT_NUM_TRACKS - 1)
+        with session_scope() as s:
+            repo = TrackRepository(session=s)
+            repo.create_tracks_for_new_power_hour(power_hour_id)
 
-view = Tracklist(None)
-view.setModel(tracklist_model)
+        self.endInsertRows()
 
-view.show()
-app.exec_()
-# new_url = 'https://www.youtube.com/watch?v=_e8xy7kpNPQ'
-# url = tracklist.data(tracklist.index(0, 2))
-# tracklist.setData(tracklist.index(0, 2), new_url)
-# assert tracklist.data(tracklist.index(0, 2)) == new_url
+    @property
+    def tracks(self):
+        with session_scope() as s:
+            repo = TrackRepository(session=s)
+            tracks = repo.find_tracks_ready_for_export(self.current_power_hour_id)
+            s.expunge_all()
+
+        return tracks
+
+    def headerData(self, pos, orientation, role=None):
+        if role != Qt.DisplayRole:
+            return None
+
+        if orientation == Qt.Vertical:
+            return str(pos + 1)
+
+        return titleize(str(Track.column_names()[pos]))
 
 
-t = power_hour.tracks[0]
+
+# app = QApplication([])
+# power_hour = session.query(PowerHour).order_by('-id').first()
+#
+# tracklist_model = TracklistModel(None, track_repo=TrackRepository(session))
+# tracklist_model.current_power_hour_id = power_hour.id
+#
+# view = Tracklist(None)
+# view.setModel(tracklist_model)
+#
+# view.show()
+# app.exec_()
+#
+# t = power_hour.tracks[0]
