@@ -60,15 +60,15 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    wait_for_progress_dialog_to_go_away(context)
 
+    wait_for(lambda: os.path.exists(context.export_path), wait_time=300)
     assert_that(os.path.exists(context.export_path), is_(True))
     assert_power_hour_is_correct_length(context)
 
 def wait_for_progress_dialog_to_go_away(context):
     start = time.time()
     while export_dialog_visible(context):
-        if time.time() - start > 300:
+        if time.time() - start > 500:
             break
         QTest.qWait(100)
 
@@ -461,7 +461,7 @@ def wait_for(f, *fargs, wait_time=3, **fkwargs):
         result = f(*fargs, **fkwargs)
         if result or time.time() > timeout:
             break
-        QTest.qWait(10)
+        QTest.qWait(100)
 
     return result
 

@@ -227,7 +227,7 @@ class TracklistModel(QAbstractTableModel):
         return len(self._cache)
 
     def columnCount(self, parent=QModelIndex(), **kwargs):
-        return len(Track.__table__._columns.keys())
+        return len(Track.column_names())
 
     def is_valid_for_export(self):
         return (

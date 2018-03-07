@@ -3,12 +3,13 @@ import os
 import sys
 from contextlib import suppress
 
+os.environ['PHC_ENV'] = 'test'
+
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 
-import power_hour_creator.config
-from power_hour_creator import power_hour_creator, config, boot
+from power_hour_creator import config, boot
 from power_hour_creator.boot import bootstrap_app_environment
 from power_hour_creator.ui.main_window import build_main_window
 from tests.config import SUPPORT_PATH
@@ -16,7 +17,6 @@ from tests.features.models import TracklistTestModel
 
 
 def before_all(context):
-    config.phc_env = 'test'
     delete_database()
 
 
