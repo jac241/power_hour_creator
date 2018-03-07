@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSignal
 from PyQt5.QtWidgets import QApplication
+from decimal import Decimal
 from inflection import titleize
 from sqlalchemy import create_engine, Integer, Column, Text, Numeric, Boolean, \
     ForeignKey, desc, asc, func
@@ -98,7 +99,7 @@ class Track(QtModelMixin, Base):
     @hybrid_property
     def start_time(self):
         try:
-            return round(float(self._start_time), 3)
+            return round(Decimal(self._start_time), 3)
         except TypeError:
             return self._start_time
 
@@ -230,10 +231,14 @@ class TracklistModel(QAbstractTableModel):
         return len(Track.column_names())
 
     def is_valid_for_export(self):
+        def start_time_present_if_url(track):
+            return (not track.url) or (track.url and track.start_time != '')
+
         return (
             self.current_power_hour_id is not None and
             bool(self._cache) and
-            all(not t.start_time == '' for t in self._cache)
+            any(t.url for t in self._cache) and
+            all(start_time_present_if_url(t) for t in self._cache)
         )
 
     def add_tracks_to_new_power_hour(self, power_hour_id):

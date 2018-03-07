@@ -65,6 +65,7 @@ def step_impl(context):
     assert_that(os.path.exists(context.export_path), is_(True))
     assert_power_hour_is_correct_length(context)
 
+
 def wait_for_progress_dialog_to_go_away(context):
     start = time.time()
     while export_dialog_visible(context):
@@ -204,7 +205,8 @@ def step_impl(context):
     """
     :type context: behave.runner.Context
     """
-    wait_for_progress_dialog_to_go_away(context)
+
+    wait_for(lambda: os.path.exists(context.export_path), wait_time=300)
 
     assert_that(os.path.exists(context.export_path), is_(True))
     assert_power_hour_is_correct_length(context)
