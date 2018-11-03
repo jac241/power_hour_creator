@@ -75,7 +75,7 @@ def wait_for_progress_dialog_to_go_away(context):
 
 def export_dialog_visible(context):
     export_dialog = get_export_dialog(context)
-    return export_dialog.isVisible()
+    return export_dialog and export_dialog.isVisible()
 
 
 def get_export_dialog(context):
