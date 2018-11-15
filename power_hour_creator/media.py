@@ -424,6 +424,7 @@ class VideoProcessor(MediaProcessor):
             '-s', '1280x720',
             '-r', '30',
             '-preset', 'faster',
+            '-crf', '17',
             '-nostdin',
             power_hour_path
         ]
