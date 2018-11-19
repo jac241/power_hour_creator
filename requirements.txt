@@ -1,7 +1,7 @@
 appdirs==1.4.3
 attrs==16.3.0
 youtube_dl>=2018.11.7
-pydub==0.18.0
+pydub==0.23.0
 PyQt5==5.11.3
 PyInstaller==3.4
 furl==1.0.0
