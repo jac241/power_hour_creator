@@ -8,7 +8,7 @@ furl==1.0.0
 pyhamcrest==1.9.0
 delegator.py==0.0.10
 psutil==5.2.2
-factory_boy==2.9.2
+factory_boy==2.11.1
 pypiwin32; sys_platform == 'win32'
 simplejson==3.11.1
 git+git://github.com/behave/behave@master#egg=behave
