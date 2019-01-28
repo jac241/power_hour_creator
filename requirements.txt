@@ -7,7 +7,7 @@ PyInstaller==3.4
 furl==1.0.0
 pyhamcrest==1.9.0
 delegator.py==0.0.10
-psutil==5.2.2
+psutil==5.5.0
 factory_boy==2.9.2
 pypiwin32; sys_platform == 'win32'
 simplejson==3.11.1
