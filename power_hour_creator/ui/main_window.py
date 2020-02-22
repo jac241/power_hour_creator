@@ -1,9 +1,14 @@
 import os
 import subprocess
 
-from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint
+from PyQt5 import Qt
+from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint, QUrl
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy
+from PyQt5.QtQml import QQmlEngine
+from PyQt5.QtQuick import QQuickView
+from PyQt5.QtQuickWidgets import QQuickWidget
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy, \
+    QWidget
 
 from power_hour_creator import config
 from power_hour_creator.media import PowerHour
@@ -44,6 +49,8 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self._connect_power_hour_list_view()
         self.setWindowIcon(QIcon(image_path('Beer-80.png')))
         self._restore_view_settings()
+        self._try_qml()
+
 
     def _setup_power_hour_list_view(self):
         self.powerHoursListView.setModel(self.power_hour_model)
@@ -233,6 +240,18 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.showMaximized()
         else:
             self.show()
+
+    def _try_qml(self):
+        engine = QQmlEngine()
+        view = QQuickWidget()
+        view.setMinimumSize(200, 300)
+        path_to_here = os.path.abspath(os.path.dirname(__file__))
+        engine.addImportPath(path_to_here)
+        qml_file = os.path.join(path_to_here, 'tracklist.qml')
+        view.setSource(QUrl(qml_file))
+        view.setResizeMode(QQuickWidget.SizeRootObjectToView)
+        self.tracksLayout.addWidget(view)
+
 
 
 def show_error_message_box(parent, message):

@@ -47,24 +47,25 @@ exe = EXE(pyz,
           upx=True,
           console=False )
 
-app = BUNDLE(exe,
-             name='Power Hour Creator.app',
-             icon=None,
-             bundle_identifier=None)
+if platform.system() == 'Darwin':
+  app = BUNDLE(exe,
+               name='Power Hour Creator.app',
+               icon=None,
+               bundle_identifier=None)
+else:
+  folder_exe = EXE(pyz,
+                   a.scripts,
+                   exclude_binaries=True,
+                   name='power_hour_creator',
+                   debug=False,
+                   strip=False,
+                   upx=True,
+                   console=False )
 
-folder_exe = EXE(pyz,
-                 a.scripts,
-                 exclude_binaries=True,
-                 name='power_hour_creator',
-                 debug=False,
+  coll = COLLECT(folder_exe,
+                 a.binaries,
+                 a.zipfiles,
+                 a.datas,
                  strip=False,
                  upx=True,
-                 console=False )
-
-coll = COLLECT(folder_exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=False,
-               upx=True,
-               name='Power Hour Creator')
+                 name='Power Hour Creator')

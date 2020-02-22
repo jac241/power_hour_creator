@@ -133,9 +133,7 @@ class CreatePowerHourDialog(QDialog, Ui_PowerHourExportDialog):
         progress_bar.setMaximum(0)
 
 
-def create_power_hour_in_background(power_hour,
-                                    parent_widget,
-                                    export_progress_view):
+def create_power_hour_in_background(power_hour, parent_widget, export_progress_view):
     thread = PowerHourCreationThread(parent_widget, power_hour)
     progress_dialog = CreatePowerHourDialog(parent_widget, power_hour)
     progress_dialog.cancelButton.clicked.connect(thread.cancel_export)
