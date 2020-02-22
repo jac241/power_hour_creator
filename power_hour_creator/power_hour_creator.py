@@ -22,6 +22,7 @@ sys.excepthook = handle_exception
 
 def main():
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+    sys.argv.extend(['--style', 'fusion'])
     app = QtWidgets.QApplication(sys.argv)
     app.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     bootstrap_app_environment()
@@ -29,6 +30,7 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info("Launching GUI")
     logger.info("Showing main window")
+
 
     main_window = build_main_window()
     main_window.show_with_last_full_screen_setting()

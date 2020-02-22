@@ -14,16 +14,18 @@ Rectangle {
 //        onClicked: forceActiveFocus()
 //    }
 
+
     TableView {
         id: tracklist
         anchors.fill: parent
+        anchors.margins: 5
         columnSpacing: 1
         rowSpacing: 1
         clip: true
         boundsBehavior: Flickable.StopAtBounds
 
-
         model: TableModel {
+
             TableModelColumn { display: "name" }
             TableModelColumn { display: "number" }
 
@@ -83,23 +85,43 @@ Rectangle {
             ]
         }
 
-        delegate: Rectangle {
-            implicitHeight: 50
-            implicitWidth: 100
-            border.width: 1
-            MouseArea {
-                anchors.fill: parent
-                onClicked: forceActiveFocus()
-            }
+        delegate: DelegateChooser {
+            DelegateChoice {
+                column: 0
+                delegate: RowLayout {
+                    anchors.leftMargin: 5
+                    anchors.rightMargin: 5
+                    spacing: 5
+                    Label {
+                        text: "Name: "
+                    }
+                    TextField {
+                        text: display
+                        onAccepted: model.display = text
+                        selectByMouse: true
 
-            TextInput {
-                padding: 3
-                text: display
-                selectByMouse: true
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.IBeamCursor
-                    acceptedButtons: Qt.NoButton
+                        onActiveFocusChanged: {
+                            if (activeFocus) {
+                                selectAll()
+                            }
+                        }
+                    }
+                }
+            }
+            DelegateChoice {
+                column: 1
+                delegate: RowLayout {
+                    anchors.leftMargin: 5
+                    anchors.rightMargin: 5
+                    spacing: 5
+                    Label {
+                        text: "Phone Number: "
+                    }
+                    TextField {
+                        text: display
+                        onAccepted: model.display = text
+                        selectByMouse: true
+                    }
                 }
             }
         }

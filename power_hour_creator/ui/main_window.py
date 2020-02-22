@@ -5,7 +5,6 @@ from PyQt5 import Qt
 from PyQt5.QtCore import QObject, pyqtSignal, QSize, QPoint, QUrl
 from PyQt5.QtGui import QIcon
 from PyQt5.QtQml import QQmlEngine
-from PyQt5.QtQuick import QQuickView
 from PyQt5.QtQuickWidgets import QQuickWidget
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QSpacerItem, QSizePolicy, \
     QWidget
