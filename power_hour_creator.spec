@@ -62,7 +62,10 @@ exe = EXE(pyz,
 app = BUNDLE(exe,
              name='Power Hour Creator.app',
              icon=None,
-             bundle_identifier=None)
+             bundle_identifier=None,
+             info_plist={
+               'NSHighResolutionCapable': 'True'
+             })
 
 folder_exe = EXE(pyz,
                  a.scripts,
