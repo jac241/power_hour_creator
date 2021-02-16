@@ -20,13 +20,25 @@ if platform.system() == 'Windows':
         "C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x86"
     ]
 
+cert_datas = []
+if platform.system() == 'Darwin':
+  from PyInstaller.utils.hooks import exec_statement
+  cert_datas = exec_statement("""
+      import ssl
+      print(ssl.get_default_verify_paths().cafile)""").strip().split()
+  cert_datas = [(f, 'lib') for f in cert_datas]
+
+print(cert_datas)
+
 a = Analysis(['power_hour_creator-runner.py'],
              pathex=pathex,
              binaries=[],
              datas=[
                 (ext_dir, ext_dir),
                 ('power_hour_creator/db', 'power_hour_creator/db'),
-                ('assets', 'assets')],
+                ('assets', 'assets'),
+                *cert_datas,
+             ],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],

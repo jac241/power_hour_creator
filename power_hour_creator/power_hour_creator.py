@@ -9,6 +9,7 @@ from power_hour_creator.ui.main_window import build_main_window
 from .boot import bootstrap_app_environment
 import traceback
 import signal
+import certifi
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):

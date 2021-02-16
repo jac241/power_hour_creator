@@ -1,9 +1,9 @@
 appdirs==1.4.3
 attrs==16.3.0
-youtube_dl==2020.5.8
+youtube_dl==2020.11.19
 pydub==0.18.0
-PyQt5==5.12
-PyInstaller==3.4
+PyQt5==5.14.2
+PyInstaller==3.6
 furl==1.0.0
 pyhamcrest==1.9.0
 delegator.py==0.0.10
@@ -14,3 +14,4 @@ simplejson==3.11.1
 git+git://github.com/behave/behave@master#egg=behave
 pytest==3.2.3
 pytest-qt==2.3.1
+certifi==2020.4.5.1
