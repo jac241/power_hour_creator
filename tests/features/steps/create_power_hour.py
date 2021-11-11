@@ -11,7 +11,7 @@ from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
 from behave import *
 from hamcrest import *
-from youtube_dl import DownloadError
+from yt_dlp import DownloadError
 
 from power_hour_creator import config
 from power_hour_creator.media import MediaFile

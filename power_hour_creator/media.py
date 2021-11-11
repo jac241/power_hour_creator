@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 import attr
 import delegator
 import simplejson as json
-from youtube_dl import YoutubeDL, DownloadError
+from yt_dlp import YoutubeDL, DownloadError
 
 from ffmpeg_normalize.__main__ import FFmpegNormalize
 from power_hour_creator import config

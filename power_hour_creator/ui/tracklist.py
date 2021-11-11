@@ -15,7 +15,7 @@ from decimal import Decimal, InvalidOperation
 
 from power_hour_creator.config import get_persistent_settings
 from power_hour_creator.media import Track, find_track
-from youtube_dl import DownloadError
+from yt_dlp import DownloadError
 
 DEFAULT_NUM_TRACKS = 60
 
