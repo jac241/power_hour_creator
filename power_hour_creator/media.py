@@ -516,7 +516,7 @@ def build_audio_normalizer(output_paths):
         '--dir': False,
         '--dry-run': False,
         '--ebu': False,
-        '--extra-options': '-b:a 192k -ar 44100',
+        '--extra-options': '-b:a 192k -ar 44100 -max_muxing_queue_size 1024',
         '--force': True,
         '--format': 'wav',
         '--level': '-26',
