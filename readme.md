@@ -9,7 +9,7 @@ Easily create video or audio power hours from YouTube videos. Add your urls, pic
 Power Hour Creator automatically downloads the videos, cuts them to 60 seconds, and merges them into one file for you. Use the import and export options to share the power hour tracklists.
 
 ## Development
-Uses Python 3.6.7, PyQt 5, [youtube-dl](https://github.com/rg3/youtube-dl), ffmpeg, and [ffmpeg-normalize](https://github.com/slhck/ffmpeg-normalize).
+Uses Python 3.6.7, PyQt 5, [yt-dlp](https://github.com/yt-dlp/yt-dlp), ffmpeg, and [ffmpeg-normalize](https://github.com/slhck/ffmpeg-normalize).
 
 ## Building
 To build:
