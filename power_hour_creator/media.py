@@ -1,3 +1,4 @@
+import glob
 import json
 import logging
 import os
@@ -7,6 +8,7 @@ import subprocess
 from collections import namedtuple
 from contextlib import suppress
 from decimal import Decimal
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import attr
@@ -81,7 +83,7 @@ class LocalMediaHandler:
         }
 
     def download(self, media_file, **_):
-        shutil.copyfile(media_file.track_url, media_file.download_path)
+        shutil.copyfile(media_file.track_url, media_file.target_download_path)
 
 
 class RemoteMediaDownloader:
@@ -94,21 +96,24 @@ class RemoteMediaDownloader:
         return self._remote_service_cls().extract_info(url, download=False)
 
     def download(self, media_file, progress_listener):
-        self._build_remote_service(media_file, progress_listener) \
+        out = self._build_remote_service(media_file, progress_listener) \
             .download([media_file.track_url])
+        return out
 
     def _build_remote_service(self, media_file, progress_listener):
         shared_opts = {
             'ffmpeg_location': ffmpeg_dir(),
             'verbose': False,
-            'outtmpl': os.path.splitext(media_file.download_path)[0] + '.%(ext)s',
+            'outtmpl': os.path.splitext(media_file.target_download_path)[0] + '.%(ext)s',
             '_logger': self._logger,
             'progress_hooks': [progress_listener.on_download_progress],
         }
         if media_file.is_video:
-            more_opts = {
-                'format': '({})[height<=720]'.format(config.VIDEO_FORMAT),
-            }
+            more_opts = {}
+            # more_opts = {
+            #     # 'format': '({})[height<=720]'.format(config.VIDEO_FORMAT),
+            #     'format': 'best[height<=1080]',
+            # }
         else:
             more_opts = {
                 'format': 'bestaudio/best',
@@ -175,11 +180,24 @@ class MediaFile:
 
     @property
     def output_path(self):
-        return os.path.splitext(self.download_path)[0] + '_out' + os.path.splitext(self.download_path)[1]
+        return os.path.splitext(self.path_to_downloaded_file)[0] + '_out' + os.path.splitext(self.path_to_downloaded_file)[1]
 
     @property
-    def download_path(self):
+    def target_download_path(self):
+        """
+        Attempts to download the file to this location, file extension may
+        ultimately differ after download, which should be picked up by
+        path_to_downloaded_file
+        """
         return os.path.join(self.directory, '{:05d}.{}'.format(self._position + 1, self.extension))
+
+    @property
+    def path_to_downloaded_file(self):
+        glob_search_pattern = f"{self._position + 1:05d}.*"
+        potential_file_list = list(Path(self.directory).glob(glob_search_pattern))
+        if len(potential_file_list) != 1:
+            raise RuntimeError(f"{len(potential_file_list)} files found matching the search pattern '{glob_search_pattern}'")
+        return str(potential_file_list[0])
 
     @property
     def normalized_path(self):
@@ -200,7 +218,7 @@ class MediaFile:
 
     @property
     def info(self):
-        return self.__class__.read_info(self.download_path)
+        return self.__class__.read_info(self.path_to_downloaded_file)
 
     @staticmethod
     def read_info(path):
@@ -370,7 +388,7 @@ class AudioProcessor(MediaProcessor):
             '-y',
             '-ss', str(media_file.track_start_time),
             '-t', '{}'.format(config.track_length),
-            '-i', media_file.download_path,
+            '-i', media_file.path_to_downloaded_file,
             '-acodec', 'copy',
             '-ar', '44100',
             '-b:a', '192k',
@@ -382,7 +400,7 @@ class AudioProcessor(MediaProcessor):
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def _move_unprocessed_file_to_correct_path(self, media_file):
-        shutil.copyfile(media_file.download_path, media_file.output_path)
+        shutil.copyfile(media_file.path_to_downloaded_file, media_file.output_path)
 
     def _write_output_track_list_to_file(self, output_tracks, concat_directive_path):
         with open(concat_directive_path, 'w') as f:
@@ -396,7 +414,7 @@ class VideoProcessor(MediaProcessor):
         self._prepare_files_for_merge(media_file)
 
     def merge_files_into_power_hour(self, output_files, power_hour_path):
-        scale_string = 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1:1'
+        scale_string = 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1:1'
         filter_strings = []
 
         for index in range(len(output_files)):
@@ -419,12 +437,11 @@ class VideoProcessor(MediaProcessor):
             '-map', '[v]',
             '-map', '[a]',
             '-y',
-            '-acodec', 'aac',
-            '-vcodec', 'libx264',
-            '-s', '1280x720',
+            '-acodec', 'libopus',
+            '-vcodec', 'libx265',
+            '-s', '1920x1080',
             '-r', '30',
-            '-preset', 'faster',
-            '-crf', '17',
+            '-preset', 'fast',
             '-nostdin',
             power_hour_path
         ]
@@ -445,7 +462,7 @@ class VideoProcessor(MediaProcessor):
 
     def _frame_rate_and_resolution_are_correct(self, media_file):
         info = self._video_stream_info(media_file)
-        return info['height'] == 720 and info['width'] == 1280
+        return info['height'] == 1080 and info['width'] == 1920
 
     def _video_stream_info(self, media_file):
         return media_file.info['streams'][0]
@@ -453,11 +470,11 @@ class VideoProcessor(MediaProcessor):
     def _convert_video_to_correct_attributes(self, media_file):
         cmd = [
             ffmpeg_exe(),
-            '-i', media_file.download_path,
+            '-i', media_file.path_to_downloaded_file,
             '-y',
-            '-acodec', 'aac',
+            '-acodec', 'libopus',
             '-vcodec', 'libx264',
-            '-vf', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
+            '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
             '-r', '30',
             '-preset', 'faster',
             '-nostdin',
@@ -479,7 +496,7 @@ class VideoProcessor(MediaProcessor):
                 break
 
     def _move_file_back_to_download_path(self, media_file):
-        shutil.copyfile(media_file.output_path, media_file.download_path)
+        shutil.copyfile(media_file.output_path, media_file.path_to_downloaded_file)
 
     def _shorten_to_one_minute(self, media_file):
         cmd = [
@@ -487,7 +504,7 @@ class VideoProcessor(MediaProcessor):
             '-y',
             '-ss', str(media_file.track_start_time),
             '-t', '{}'.format(config.track_length),
-            '-i', media_file.download_path,
+            '-i', media_file.path_to_downloaded_file,
             '-codec', 'copy',
             media_file.output_path
         ]
@@ -496,7 +513,7 @@ class VideoProcessor(MediaProcessor):
         subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
     def _move_file_to_output_path(self, media_file):
-        shutil.copyfile(media_file.download_path, media_file.output_path)
+        shutil.copyfile(media_file.path_to_downloaded_file, media_file.output_path)
 
 
 def normalize_audio(media_files):
@@ -511,12 +528,12 @@ def build_audio_normalizer(output_paths):
         # map has no len, so we have to make it a list
         # http://stackoverflow.com/questions/21572840/map-object-has-no-len-in-python-3-3
         '<input-file>': output_paths,
-        '--acodec': 'aac',
+        '--acodec': 'libopus',
         '--debug': False,
         '--dir': False,
         '--dry-run': False,
         '--ebu': False,
-        '--extra-options': '-b:a 192k -ar 44100',
+        '--extra-options': '-b:a 192k',
         '--force': True,
         '--format': 'wav',
         '--level': '-26',
