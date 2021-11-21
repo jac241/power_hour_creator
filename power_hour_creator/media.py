@@ -100,7 +100,7 @@ class RemoteMediaDownloader:
     def _build_remote_service(self, media_file, progress_listener):
         shared_opts = {
             'ffmpeg_location': ffmpeg_dir(),
-            'verbose': True,
+            'verbose': False,
             'outtmpl': os.path.splitext(media_file.download_path)[0] + '.%(ext)s',
             '_logger': self._logger,
             'progress_hooks': [progress_listener.on_download_progress],
