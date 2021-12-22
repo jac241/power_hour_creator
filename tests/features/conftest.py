@@ -8,18 +8,18 @@ from power_hour_creator.ui.main_window import build_main_window
 from tests.support.components import *
 from tests.features.environment import delete_export_files, clean_database
 
+app = QApplication(sys.argv)
 
-@pytest.yield_fixture(scope='function')
+
+@pytest.fixture(scope="function")
 def ph_app():
-    app = QApplication(sys.argv)
-    config.phc_env = 'test'
+    config.phc_env = "test"
     bootstrap_app_environment()
 
     yield app
 
     delete_export_files()
     clean_database()
-    del app
 
 
 @pytest.fixture
@@ -43,5 +43,3 @@ def tracklist_component(main_window):
 @pytest.fixture
 def phs_list_component(main_window):
     return PowerHourListComponent(main_window.powerHoursListView)
-
-

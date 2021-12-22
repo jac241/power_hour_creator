@@ -8,25 +8,26 @@ APP_NAME = "Power Hour Creator"
 APP_AUTHOR = "jac241"
 APP_DIRS = AppDirs(APP_NAME, APP_AUTHOR)
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-EXT_DIR = os.path.abspath(os.path.join(ROOT_DIR, '../ext'))
+EXT_DIR = os.path.abspath(os.path.join(ROOT_DIR, "../ext"))
 
-AUDIO_FORMAT = 'm4a'
-VIDEO_FORMAT = 'mp4'
+AUDIO_FORMAT = "m4a"
+VIDEO_FORMAT = "mp4"
 
-phc_env = os.environ.get('PHC_ENV', 'production')
+phc_env = os.environ.get("PHC_ENV", "production")
 
-MIGRATIONS_PATH = os.path.join(ROOT_DIR, 'db', 'migrations')
+MIGRATIONS_PATH = os.path.join(ROOT_DIR, "db", "migrations")
 track_length = 60
 
 OS = platform.system().lower()
 
-DEFAULT_TRACKLIST_DIR = os.path.expanduser('~/Documents')
+DEFAULT_TRACKLIST_DIR = os.path.expanduser("~/Documents")
+
+DB_CONN_NAME = "phc_db_conn"
 
 
 def db_path():
-    return os.path.join(APP_DIRS.user_data_dir, '{}.db'.format(phc_env))
+    return os.path.join(APP_DIRS.user_data_dir, "{}.db".format(phc_env))
 
 
 def get_persistent_settings():
     return QSettings(APP_AUTHOR, APP_NAME)
-

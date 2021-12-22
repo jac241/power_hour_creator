@@ -17,40 +17,42 @@ def ensure_log_folder_exists():
 def setup_logging():
     ensure_log_folder_exists()
     # set up logging to file - see previous section for more details
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m-%d %H:%M',
-                        filename=os.path.join(
-                            config.APP_DIRS.user_log_dir,
-                            '{}.log'.format(config.phc_env)),
-                        filemode='a')
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+        datefmt="%m-%d %H:%M",
+        filename=os.path.join(
+            config.APP_DIRS.user_log_dir, "{}.log".format(config.phc_env)
+        ),
+        filemode="a",
+    )
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     # set a format which is simpler for console use
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
     # tell the handler to use this format
     console.setFormatter(formatter)
 
     # add the handler to the root _logger
-    root_logger = logging.getLogger('')
+    root_logger = logging.getLogger("")
 
-    if len(root_logger.handlers) <= 1: # this gets called
+    if len(root_logger.handlers) <= 1:  # this gets called
         root_logger.addHandler(console)
 
 
 def connect_to_db():
     logger = logging.getLogger(__name__)
-    logger.info('Connecting to DB: {}'.format(config.db_path()))
-    db = QSqlDatabase.addDatabase('QSQLITE')
+    logger.info("Connecting to DB: {}".format(config.db_path()))
+    db = QSqlDatabase.addDatabase("QSQLITE")
     db.setDatabaseName(config.db_path())
 
     if not db.open():
         QMessageBox.critical(
             None,
-            'Cannot open database',
-            'Unable to open database\n\nClick Cancel to exit',
-            QMessageBox.Cancel
+            "Cannot open database",
+            "Unable to open database\n\nClick Cancel to exit",
+            QMessageBox.Cancel,
         )
 
     return db
@@ -63,23 +65,24 @@ class MigrationError(Exception):
 def ensure_migrations_table_exists():
     query = QSqlQuery()
     # noinspection SqlNoDataSourceInspection
-    result = query.exec_("""
+    result = query.exec_(
+        """
         CREATE TABLE IF NOT EXISTS migrations (
             level INTEGER PRIMARY KEY
         );
-    """)
+    """
+    )
 
 
 def fail_migration(query, migration):
     QSqlDatabase.database().rollback()
     QMessageBox.critical(
         None,
-        'Migration failed',
-        (
-            'Migration {} failed with error {}'
-            '\n\nClick Cancel to exit'
-        ).format(migration.path, query.lastError().databaseText()),
-        QMessageBox.Cancel
+        "Migration failed",
+        ("Migration {} failed with error {}" "\n\nClick Cancel to exit").format(
+            migration.path, query.lastError().databaseText()
+        ),
+        QMessageBox.Cancel,
     )
     raise MigrationError
 
@@ -87,7 +90,7 @@ def fail_migration(query, migration):
 def update_schema_migrations_level(migration):
     query = QSqlQuery()
     query.prepare("INSERT INTO migrations (level) VALUES (:level)")
-    query.bindValue(':level', migration.level)
+    query.bindValue(":level", migration.level)
     if not query.exec_():
         fail_migration(query, migration.path)
 
@@ -102,9 +105,12 @@ def get_migration_level():
 
     return level or 0
 
+
 from functools import update_wrapper
+
+
 class reify(object):
-    """ Use as a class method decorator.  It operates almost exactly like the
+    """Use as a class method decorator.  It operates almost exactly like the
     Python ``@property`` decorator, but it puts the result of the method it
     decorates into the instance dict after the first call, effectively
     replacing the function it decorates with an instance variable.  It is, in
@@ -134,6 +140,7 @@ class reify(object):
         >>> f.jammy
         2
     """
+
     def __init__(self, wrapped):
         self.wrapped = wrapped
         update_wrapper(self, wrapped)
@@ -161,29 +168,29 @@ class Migration:
 
 def log_attempting_migration(migration):
     logger = logging.getLogger(__name__)
-    logger.info('Migrating DB to level {}'.format(migration.level))
+    logger.info("Migrating DB to level {}".format(migration.level))
 
 
 def log_successful_migration(migration):
     logger = logging.getLogger(__name__)
-    logger.info('Successfully migrated DB to level {}'.format(migration.level))
+    logger.info("Successfully migrated DB to level {}".format(migration.level))
 
 
 def migrate_database():
     initial_migration_level = get_migration_level()
-    migration_paths = glob(os.path.join(config.MIGRATIONS_PATH, '*.sql'))
+    migration_paths = glob(os.path.join(config.MIGRATIONS_PATH, "*.sql"))
 
     for migration in map(lambda p: Migration(p), sorted(migration_paths)):
 
         if migration.already_performed(initial_migration_level):
             continue
 
-        with open(migration.path, 'r') as f:
+        with open(migration.path, "r") as f:
             QSqlDatabase.database().transaction()
 
             log_attempting_migration(migration)
 
-            for statement in f.read().split(';'):
+            for statement in f.read().split(";"):
                 query = QSqlQuery()
                 if not query.exec_(statement):
                     fail_migration(query, migration)
@@ -195,7 +202,7 @@ def migrate_database():
 
 
 def turn_on_foreign_keys():
-    q = QSqlQuery('PRAGMA foreign_keys=ON')
+    q = QSqlQuery("PRAGMA foreign_keys=ON")
     assert q.exec_()
 
 
@@ -217,4 +224,3 @@ def bootstrap_app_environment():
 
     setup_logging()
     setup_database()
-

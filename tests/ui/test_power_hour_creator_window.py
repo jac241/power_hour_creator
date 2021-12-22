@@ -6,12 +6,7 @@ from power_hour_creator.ui.creation import CreatePowerHourDialog
 
 @pytest.fixture
 def power_hour():
-    return PowerHour(
-        tracks=[],
-        path='~',
-        is_video=True,
-        name='MyPowerHour'
-    )
+    return PowerHour(tracks=[], path="~", is_video=True, name="MyPowerHour")
 
 
 @pytest.fixture
@@ -23,4 +18,4 @@ def create_power_hour_dialog(qtbot, power_hour):
 
 
 def test_init_should_set_title_from_power_hour(create_power_hour_dialog):
-    assert create_power_hour_dialog.windowTitle() == 'Exporting: MyPowerHour'
+    assert create_power_hour_dialog.windowTitle() == "Exporting: MyPowerHour"
