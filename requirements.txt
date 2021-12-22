@@ -1,9 +1,9 @@
 appdirs==1.4.3
 attrs==21.2.0
-yt-dlp==2021.11.10.1
+yt-dlp==2021.12.1
 pydub==0.18.0
 PyQt5==5.15.2
-PyInstaller==3.6
+PyInstaller==4.7
 furl==1.0.0
 pyhamcrest==1.9.0
 delegator.py==0.0.10
