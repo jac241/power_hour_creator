@@ -1,8 +1,8 @@
 appdirs==1.4.3
 attrs==21.2.0
-yt-dlp==2021.12.1
+yt-dlp[default,curl-cffi]==2024.08.06
 pydub==0.18.0
-PyQt5==5.15.2
+PyQt5==5.15.11
 PyInstaller==4.7
 furl==1.0.0
 pyhamcrest==1.9.0
@@ -11,7 +11,7 @@ psutil==5.6.6
 factory_boy==2.9.2
 pypiwin32; sys_platform == 'win32'
 simplejson==3.11.1
-git+git://github.com/behave/behave@master#egg=behave
+git+https://github.com/behave/behave.git#egg=behave
 pytest==6.2.5
 pytest-qt==4.0.2
 certifi==2020.4.5.1
