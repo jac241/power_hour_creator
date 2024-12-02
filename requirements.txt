@@ -10,7 +10,7 @@ delegator.py==0.0.10
 psutil==5.2.2
 factory_boy==2.9.2
 pypiwin32; sys_platform == 'win32'
-simplejson==3.11.1
+simplejson==3.16.0
 git+git://github.com/behave/behave@master#egg=behave
 pytest==3.2.3
 pytest-qt==2.3.1
